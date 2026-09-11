@@ -4,7 +4,7 @@ LibreROM is a clean-room, open-source firmware/ROM project for classic Motorola 
 
 The long-term goal is to provide a freely redistributable ROM implementation that can boot and support compatible system software without distributing Apple ROM code.
 
-> **Status:** M0 — project foundation. LibreROM is not yet a usable Macintosh ROM.
+> **Status:** M1 implementation baseline — minimal 68000 ROM source, deterministic layout and static qualification are present. Emulator runtime qualification is the remaining M1 gate.
 
 ## Principles
 
@@ -14,30 +14,54 @@ The long-term goal is to provide a freely redistributable ROM implementation tha
 - Start small: bring-up infrastructure first, then incrementally implement firmware services.
 - Target real 68k hardware semantics where practical, while keeping emulator-based qualification reproducible.
 
-## Initial scope
+## Current M1 ROM
 
-M0 establishes the engineering and legal foundation for LibreROM. The first technical target is a minimal 68000-compatible ROM image with deterministic layout, reset/vector handling, diagnostic bring-up, and emulator-testable behavior.
+The first executable image is deliberately machine-neutral. It contains:
 
-Likely early machine targets will be simple 68000-era Macintosh-class configurations before later 68020/68030/68040 systems are considered.
+- a 68000 reset vector pair,
+- an initial stack pointer assumption,
+- a reset entry point,
+- an interrupt-masked diagnostic stop loop,
+- a deterministic `LIBREROM-M1` marker,
+- a fixed 64 KiB ROM image layout.
+
+This is **not yet a Macintosh-compatible ROM**. It is a bring-up image used to qualify the toolchain, image format, reset path and emulator harness before machine-specific hardware support is added.
 
 ## Repository layout
 
 ```text
-docs/       Design, clean-room policy and roadmap
-include/    Public project headers
-src/        Firmware source
-scripts/    Build and qualification helpers
-tests/      Host-side tests
+docs/               Design, clean-room policy, qualification and roadmap
+src/arch/m68k/       68000 reset/vector source
+linker/               ROM linker layout
+scripts/              Build and qualification helpers
+tests/                Host-side tests
+build/                Generated artifacts (ignored)
 ```
 
 ## Build
 
-M0 contains a host-side qualification target and a placeholder ROM build target. A cross-toolchain will be introduced when the first executable 68k firmware code lands.
+A GNU-style m68k ELF cross-toolchain is expected. Override `CROSS` if your prefix differs.
 
 ```sh
-make check
 make
+make check
 ```
+
+Default tools are:
+
+```text
+m68k-elf-as
+m68k-elf-ld
+m68k-elf-objcopy
+```
+
+The generated image is `build/librom-m1.bin` and must be exactly 65536 bytes.
+
+## Qualification
+
+`make check` validates the M0 repository invariants plus M1 source/layout invariants. `make qualify-m1` builds the image and verifies its reset vectors, first opcodes, diagnostic marker, size and SHA-256 metadata.
+
+Runtime qualification in a selected emulator profile remains required before M1 is declared complete.
 
 ## Clean-room policy
 
