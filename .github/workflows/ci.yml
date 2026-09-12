@@ -21,13 +21,19 @@ jobs:
       - name: Build and qualify M1
         run: make CROSS=m68k-linux-gnu- qualify-m1
 
-      - name: Upload M1 runtime evidence
+      - name: Build and qualify M2.3 Mac Plus path
+        run: make CROSS=m68k-linux-gnu- qualify-m2_3
+
+      - name: Upload runtime evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: librerom-m1-evidence
+          name: librerom-runtime-evidence
           path: |
             build/librom-m1.bin
             build/librom-m1.map
             build/m1-runtime/runtime.txt
+            build/librom-m2.3-macplus.bin
+            build/librom-m2.3-macplus.map
+            build/m2_3-runtime/runtime.txt
           if-no-files-found: warn
