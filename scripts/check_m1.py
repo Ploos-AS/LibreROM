@@ -4,7 +4,7 @@ from pathlib import Path
 required = {
     "src/arch/m68k/reset.S": ["_vectors", "_reset", "LIBREROM-M1", "stop"],
     "linker/m1.ld": ["OUTPUT_ARCH(m68k)", "LENGTH = 64K", "ASSERT"],
-    "scripts/pad_rom.py": ["0xff", "target"],
+    "scripts/pad_rom.py": ["\\xff", "target"],
 }
 
 failed = False
