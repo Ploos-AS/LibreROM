@@ -10,7 +10,7 @@ ELF := $(BUILD)/librom-m1.elf
 ROM := $(BUILD)/librom-m1.bin
 MAP := $(BUILD)/librom-m1.map
 
-.PHONY: all check qualify-m1 qualify-m1-runtime clean
+.PHONY: all check check-m2 qualify-m1 qualify-m1-runtime clean
 
 all: $(ROM)
 
@@ -30,6 +30,10 @@ $(ROM): $(ELF)
 check:
 	$(PYTHON) scripts/check_m0.py
 	$(PYTHON) scripts/check_m1.py
+	$(PYTHON) scripts/check_m2.py
+
+check-m2:
+	$(PYTHON) scripts/check_m2.py
 
 qualify-m1: $(ROM)
 	$(PYTHON) scripts/qualify_m1.py $(ROM)
