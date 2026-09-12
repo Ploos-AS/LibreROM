@@ -10,7 +10,7 @@ ELF := $(BUILD)/librom-m1.elf
 ROM := $(BUILD)/librom-m1.bin
 MAP := $(BUILD)/librom-m1.map
 
-.PHONY: all check check-m2 qualify-m1 qualify-m1-runtime clean
+.PHONY: all check check-m2 check-m2_1 qualify-m1 qualify-m1-runtime qualify-m2_1 clean
 
 all: $(ROM)
 
@@ -31,9 +31,13 @@ check:
 	$(PYTHON) scripts/check_m0.py
 	$(PYTHON) scripts/check_m1.py
 	$(PYTHON) scripts/check_m2.py
+	$(PYTHON) scripts/check_m2_1.py
 
 check-m2:
 	$(PYTHON) scripts/check_m2.py
+
+check-m2_1:
+	$(PYTHON) scripts/check_m2_1.py
 
 qualify-m1: $(ROM)
 	$(PYTHON) scripts/qualify_m1.py $(ROM)
@@ -41,6 +45,10 @@ qualify-m1: $(ROM)
 
 qualify-m1-runtime: $(ROM)
 	bash scripts/qualify_m1_runtime.sh $(ROM)
+
+qualify-m2_1:
+	$(PYTHON) scripts/check_m2_1.py
+	$(PYTHON) tests/m2_1_overlay_model.py
 
 clean:
 	rm -rf $(BUILD)
