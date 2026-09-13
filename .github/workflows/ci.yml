@@ -89,5 +89,5 @@ jobs:
             build/m2_10-pce/empty-runtime.txt
             build/m2_10-pce/media-runtime.txt
             build/m2_10-pce/runtime.txt
-            build/m2_10-pce/test-disk.img
+            build/m2_10-pce/test-disk.psi
           if-no-files-found: warn
