@@ -163,11 +163,61 @@ _m2_12_wait_keyboard:
         move.b  0x00c01801,%d0         /* Q6 low */
         move.b  0x00c01c01,%d0         /* Q7 low */
 
-        /* Locate a data address mark D5 AA AD within a bounded raw stream.
-         * D6 must remain untouched so the original VIA DDRA can be restored.
+        /* Bind the data field to a validated c0/h0/s0 address header.
+         * This mirrors the independent PCE sector parser: find D5 AA 96,
+         * decode/validate the five address symbols, then accept D5 AA AD
+         * only in the short post-header window and require matching sector ID.
+         * D6 remains reserved for the original VIA DDRA value.
          */
+_m2_12_find_address:
         moveq   #0,%d3
-        move.l  #12000,%d4
+        move.l  #30000,%d4
+_m2_12_find_address_loop:
+        bsr.w   _m2_12_get_iwm_byte
+        tst.l   %d0
+        bmi.w   _m2_12_read_fail
+        lsl.l   #8,%d3
+        move.b  %d0,%d3
+        andi.l  #0x00ffffff,%d3
+        cmpi.l  #0x00d5aa96,%d3
+        beq.w   _m2_12_address_found
+        subq.l  #1,%d4
+        bne.w   _m2_12_find_address_loop
+        bra.w   _m2_12_read_fail
+
+_m2_12_address_found:
+        /* Save decoded c,s,h,fmt,checksum symbols in scratch RAM. */
+        move.l  #0x00000450,%a0
+        moveq   #4,%d4
+_m2_12_address_symbols:
+        bsr.w   _m2_12_get_gcr_symbol
+        tst.l   %d0
+        bmi.w   _m2_12_find_address
+        move.b  %d0,(%a0)+
+        dbra    %d4,_m2_12_address_symbols
+
+        /* Address checksum is c ^ s ^ h ^ fmt ^ ck == 0. */
+        move.l  #0x00000450,%a0
+        moveq   #0,%d7
+        move.b  0(%a0),%d7
+        eor.b   1(%a0),%d7
+        eor.b   2(%a0),%d7
+        eor.b   3(%a0),%d7
+        eor.b   4(%a0),%d7
+        tst.b   %d7
+        bne.w   _m2_12_find_address
+
+        /* M2.12 fixture target is exactly cylinder 0, head 0, sector 0. */
+        tst.b   0(%a0)
+        bne.w   _m2_12_find_address
+        tst.b   1(%a0)
+        bne.w   _m2_12_find_address
+        tst.b   2(%a0)
+        bne.w   _m2_12_find_address
+
+        /* PCE scans at most 64 raw bytes after a valid address header for DAM. */
+        moveq   #0,%d3
+        move.w  #63,%d4
 _m2_12_find_dam:
         bsr.w   _m2_12_get_iwm_byte
         tst.l   %d0
@@ -176,18 +226,19 @@ _m2_12_find_dam:
         move.b  %d0,%d3
         andi.l  #0x00ffffff,%d3
         cmpi.l  #0x00d5aaad,%d3
-        beq.s   _m2_12_dam_found
-        subq.l  #1,%d4
-        bne.w   _m2_12_find_dam
-        bra.w   _m2_12_read_fail
+        beq.w   _m2_12_dam_found
+        dbra    %d4,_m2_12_find_dam
+        bra.w   _m2_12_find_address
 
 _m2_12_dam_found:
-        /* First translated symbol after DAM is sector number; require 0. */
+        /* First translated symbol after DAM must match header sector (zero). */
         bsr.w   _m2_12_get_gcr_symbol
         tst.l   %d0
         bmi.w   _m2_12_read_fail
-        tst.b   %d0
-        bne.w   _m2_12_read_fail
+        moveq   #0,%d7
+        move.b  0x00000451,%d7
+        cmp.b   %d7,%d0
+        bne.w   _m2_12_find_address
 
         /* Reconstruct 527 checksum-domain bytes at 0x00000800. */
         move.l  #0x00000800,%a1
