@@ -120,9 +120,11 @@ _m2_10_wait_keyboard:
          * addresses with one switch every 0x200 bytes. VIA Port A bit 5
          * selects sense bank 8 when CA0..CA2 are all low. Because a 6522
          * only drives ORA bits whose DDRA bits are outputs, A5 must be made
-         * an output for the duration of this probe. With Q7=0,Q6=1, reads
-         * return IWM status; bit 7 is 1 for no media and 0 for inserted media
-         * in sense bank 8.
+         * an output for the duration of this probe. Force an explicit low ->
+         * high transition after changing DDRA: the ORA latch may already
+         * contain a 1 from input-pin reads, and changing DDRA alone is not a
+         * reliable external transition. With Q7=0,Q6=1, status bit 7 is 1
+         * for no media and 0 for inserted media in sense bank 8.
          */
         move.l  #0x00efe600,%a0         /* VIA DDRA */
         move.b  (%a0),%d6               /* preserve caller-visible direction */
@@ -130,9 +132,11 @@ _m2_10_wait_keyboard:
         ori.b   #0x20,%d0               /* A5 = output */
         move.b  %d0,(%a0)
 
-        move.l  #0x00efe200,%a0         /* VIA ORA: select sense bank 8 */
+        move.l  #0x00efe200,%a0         /* VIA ORA: force A5 low -> high */
         move.b  (%a0),%d0
-        ori.b   #0x20,%d0
+        andi.b  #0xdf,%d0               /* A5 low: establish known state */
+        move.b  %d0,(%a0)
+        ori.b   #0x20,%d0               /* A5 high: select sense bank 8 */
         move.b  %d0,(%a0)
 
         move.b  0x00c00001,%d0         /* CA0 low */
