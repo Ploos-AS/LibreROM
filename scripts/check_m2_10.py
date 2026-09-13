@@ -23,8 +23,8 @@ required_linker = ["ENTRY(_m2_10_reset)", "LENGTH = 128K"]
 required_pce = [
     "notpeter/PCE.git",
     "371414f8f41ae02e9ce36004ba7b076fdd3abe63",
-    "inserted     = 0",
-    "inserted     = 1",
+    'write_cfg "$CFG_EMPTY" 0',
+    'write_cfg "$CFG_MEDIA" 1',
     "test-disk.img",
     "49 57 4D 4E",
     "49 57 4D 50",
