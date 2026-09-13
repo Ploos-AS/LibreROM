@@ -24,6 +24,7 @@ STOP_HEX=$(${CROSS:-m68k-linux-gnu-}nm -n "$ELF" | awk '$3 == "_m2_10_stop" {pri
 [ -n "$STOP_HEX" ] || exit 1
 STOP_ADDR=$((16#$STOP_HEX))
 
+# Project-authored raw 400 KiB / 800-block single-sided test medium.
 truncate -s 409600 "$DISK"
 printf 'LIBREROM-IWM-M10' | dd of="$DISK" conv=notrunc status=none
 
@@ -54,7 +55,7 @@ iwm {
 }
 disk {
   drive    = 1
-  type     = "auto"
+  type     = "image"
   file     = "$DISK"
   optional = 0
 }
@@ -81,6 +82,10 @@ run_case "$CFG_MEDIA" "$MEDIA_TRANSCRIPT"
 cat "$EMPTY_TRANSCRIPT"
 cat "$MEDIA_TRANSCRIPT"
 
+# The fixture itself must load in both cases; only insertion state differs.
+! grep -q 'loading drive 0x01 failed' "$EMPTY_TRANSCRIPT"
+! grep -q 'loading drive 0x01 failed' "$MEDIA_TRANSCRIPT"
+
 grep -Eq '00000420.*49 4E 31 30' "$EMPTY_TRANSCRIPT"
 grep -Eq '00000420.*49 57 4D 4E.*49 57 4D 30' "$EMPTY_TRANSCRIPT"
 grep -Eq '00000420.*49 4E 31 30' "$MEDIA_TRANSCRIPT"
@@ -92,6 +97,8 @@ grep -Eq '00000420.*49 57 4D 50.*49 57 4D 30' "$MEDIA_TRANSCRIPT"
     echo "iwm_status_address=0x00C01A01"
     echo "iwm_q7_low_address=0x00C01C01"
     echo "sense_bank=8"
+    echo "fixture_type=image"
+    echo "fixture_blocks=800"
     sha256sum "$ROM" "$DISK"
     echo "LibreROM M2.10 PCE qualification: PASS"
 } | tee "$WORK/runtime.txt"
