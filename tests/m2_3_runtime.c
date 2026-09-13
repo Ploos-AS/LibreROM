@@ -7,8 +7,8 @@
 #define ROM_BASE 0x00400000u
 #define ROM_SIZE 131072u
 #define RAM_SIZE (1024u * 1024u)
-#define VIA_ORA  0x00e80200u
-#define VIA_DDRA 0x00e80600u
+#define VIA_ORA  0x00efe200u
+#define VIA_DDRA 0x00efe600u
 #define OVERLAY_BIT 0x10u
 #define SIGNATURE_ADDR 0x00000100u
 #define SIGNATURE_VALUE 0x4c524d33u
