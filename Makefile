@@ -45,7 +45,20 @@ M2_10_ELF := $(BUILD)/librom-m2.10-macplus.elf
 M2_10_ROM := $(BUILD)/librom-m2.10-macplus.bin
 M2_10_MAP := $(BUILD)/librom-m2.10-macplus.map
 
-.PHONY: all check check-m2 check-m2_1 check-m2_2 check-m2_3 check-m2_4 check-m2_5 check-m2_6 check-m2_7 check-m2_8 check-m2_9 check-m2_10 qualify-m1 qualify-m1-runtime qualify-m2_1 qualify-m2_2 qualify-m2_3 qualify-m2_4 qualify-m2_5 qualify-m2_6 qualify-m2_7 qualify-m2_8 qualify-m2_9 qualify-m2_10 clean
+M2_11_OBJ := $(BUILD)/m2_11-reset.o
+M2_11_ELF := $(BUILD)/librom-m2.11-macplus.elf
+M2_11_ROM := $(BUILD)/librom-m2.11-macplus.bin
+M2_11_MAP := $(BUILD)/librom-m2.11-macplus.map
+M2_12_OBJ := $(BUILD)/m2_12-reset.o
+M2_12_ELF := $(BUILD)/librom-m2.12-macplus.elf
+M2_12_ROM := $(BUILD)/librom-m2.12-macplus.bin
+M2_12_MAP := $(BUILD)/librom-m2.12-macplus.map
+M2_13_OBJ := $(BUILD)/m2_13-reset.o
+M2_13_ELF := $(BUILD)/librom-m2.13-macplus.elf
+M2_13_ROM := $(BUILD)/librom-m2.13-macplus.bin
+M2_13_MAP := $(BUILD)/librom-m2.13-macplus.map
+
+.PHONY: all check check-m2 check-m2_1 check-m2_2 check-m2_3 check-m2_4 check-m2_5 check-m2_6 check-m2_7 check-m2_8 check-m2_9 check-m2_10 check-m2_11 check-m2_12 check-m2_13 qualify-m1 qualify-m1-runtime qualify-m2_1 qualify-m2_2 qualify-m2_3 qualify-m2_4 qualify-m2_5 qualify-m2_6 qualify-m2_7 qualify-m2_8 qualify-m2_9 qualify-m2_10 qualify-m2_11 qualify-m2_12 qualify-m2_13 clean
 
 all: $(ROM)
 
@@ -132,6 +145,28 @@ $(M2_10_ROM): $(M2_10_ELF)
 	$(OBJCOPY) -O binary --gap-fill=0xff $< $@
 	$(PYTHON) scripts/pad_rom.py $@ 131072
 
+$(M2_11_OBJ): src/platform/macplus/reset_m2_11.S | $(BUILD)
+	$(AS) -m68000 -o $@ $<
+$(M2_11_ELF): $(M2_11_OBJ) linker/m2_11.ld
+	$(LD) -T linker/m2_11.ld -Map=$(M2_11_MAP) -o $@ $(M2_11_OBJ)
+$(M2_11_ROM): $(M2_11_ELF)
+	$(OBJCOPY) -O binary --gap-fill=0xff $< $@
+	$(PYTHON) scripts/pad_rom.py $@ 131072
+$(M2_12_OBJ): src/platform/macplus/reset_m2_12.S | $(BUILD)
+	$(AS) -m68000 -o $@ $<
+$(M2_12_ELF): $(M2_12_OBJ) linker/m2_12.ld
+	$(LD) -T linker/m2_12.ld -Map=$(M2_12_MAP) -o $@ $(M2_12_OBJ)
+$(M2_12_ROM): $(M2_12_ELF)
+	$(OBJCOPY) -O binary --gap-fill=0xff $< $@
+	$(PYTHON) scripts/pad_rom.py $@ 131072
+$(M2_13_OBJ): src/platform/macplus/reset_m2_13.S | $(BUILD)
+	$(AS) -m68000 -o $@ $<
+$(M2_13_ELF): $(M2_13_OBJ) linker/m2_13.ld
+	$(LD) -T linker/m2_13.ld -Map=$(M2_13_MAP) -o $@ $(M2_13_OBJ)
+$(M2_13_ROM): $(M2_13_ELF)
+	$(OBJCOPY) -O binary --gap-fill=0xff $< $@
+	$(PYTHON) scripts/pad_rom.py $@ 131072
+
 check:
 	$(PYTHON) scripts/check_m0.py
 	$(PYTHON) scripts/check_m1.py
@@ -146,6 +181,9 @@ check:
 	$(PYTHON) scripts/check_m2_8.py
 	$(PYTHON) scripts/check_m2_9.py
 	$(PYTHON) scripts/check_m2_10.py
+	$(PYTHON) scripts/check_m2_11.py
+	$(PYTHON) scripts/check_m2_12.py
+	$(PYTHON) scripts/check_m2_13.py
 
 check-m2:
 	$(PYTHON) scripts/check_m2.py
@@ -179,6 +217,15 @@ check-m2_9:
 
 check-m2_10:
 	$(PYTHON) scripts/check_m2_10.py
+
+check-m2_11:
+	$(PYTHON) scripts/check_m2_11.py
+
+check-m2_12:
+	$(PYTHON) scripts/check_m2_12.py
+
+check-m2_13:
+	$(PYTHON) scripts/check_m2_13.py
 
 qualify-m1: $(ROM)
 	$(PYTHON) scripts/qualify_m1.py $(ROM)
@@ -229,6 +276,16 @@ qualify-m2_9: $(M2_9_ROM) $(M2_9_ELF)
 qualify-m2_10: $(M2_10_ROM) $(M2_10_ELF)
 	$(PYTHON) scripts/check_m2_10.py
 	CROSS=$(CROSS) bash scripts/qualify_m2_10_pce.sh $(M2_10_ROM) $(M2_10_ELF)
+
+qualify-m2_11: $(M2_11_ROM) $(M2_11_ELF)
+	$(PYTHON) scripts/check_m2_11.py
+	CROSS=$(CROSS) bash scripts/qualify_m2_11_pce.sh $(M2_11_ROM) $(M2_11_ELF)
+qualify-m2_12: $(M2_12_ROM) $(M2_12_ELF)
+	$(PYTHON) scripts/check_m2_12.py
+	CROSS=$(CROSS) bash scripts/qualify_m2_12_pce.sh $(M2_12_ROM) $(M2_12_ELF)
+qualify-m2_13: $(M2_13_ROM) $(M2_13_ELF)
+	$(PYTHON) scripts/check_m2_13.py
+	CROSS=$(CROSS) bash scripts/qualify_m2_13_pce.sh $(M2_13_ROM) $(M2_13_ELF)
 
 clean:
 	rm -rf $(BUILD)
