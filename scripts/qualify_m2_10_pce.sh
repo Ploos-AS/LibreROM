@@ -24,9 +24,11 @@ STOP_HEX=$(${CROSS:-m68k-linux-gnu-}nm -n "$ELF" | awk '$3 == "_m2_10_stop" {pri
 [ -n "$STOP_HEX" ] || exit 1
 STOP_ADDR=$((16#$STOP_HEX))
 
-# Project-authored raw 400 KiB / 800-block single-sided test medium.
-# Use a fully materialised file and let PCE auto-detect .img exactly like its
-# documented Mac Plus sample configuration.
+# Project-authored 400 KiB / 800-block single-sided test medium.  PCE's
+# generic raw-image autodetection is deliberately avoided here: the pinned
+# PCE build loads this fixture through its RAM-disk backend with an explicit
+# 800-block geometry.  The Mac Plus IWM layer then consumes the ordinary
+# block device and performs its own Macintosh GCR encoding.
 dd if=/dev/zero of="$DISK" bs=512 count=800 status=none
 printf 'LIBREROM-IWM-M10' | dd of="$DISK" conv=notrunc status=none
 [ "$(stat -c %s "$DISK")" -eq 409600 ] || exit 1
@@ -58,8 +60,9 @@ iwm {
 }
 disk {
   drive    = 1
-  type     = "auto"
-  file     = "test-disk.img"
+  type     = "ram"
+  blocks   = 800
+  file     = "$DISK"
   readonly = 1
   optional = 0
 }
@@ -101,7 +104,7 @@ grep -Eq '00000420.*49 57 4D 50.*49 57 4D 30' "$MEDIA_TRANSCRIPT"
     echo "iwm_status_address=0x00C01A01"
     echo "iwm_q7_low_address=0x00C01C01"
     echo "sense_bank=8"
-    echo "fixture_type=auto-img"
+    echo "fixture_type=ram-block-device"
     echo "fixture_blocks=800"
     sha256sum "$ROM" "$DISK"
     echo "LibreROM M2.10 PCE qualification: PASS"
