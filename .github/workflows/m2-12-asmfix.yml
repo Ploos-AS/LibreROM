@@ -18,36 +18,7 @@ jobs:
       - name: Fix M2.12 address checksum assembly
         shell: bash
         run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          p = Path('src/platform/macplus/reset_m2_12.S')
-          s = p.read_text()
-          old = '''        moveq   #0,%d7
-        move.b  0(%a0),%d7
-        eor.b   1(%a0),%d7
-        eor.b   2(%a0),%d7
-        eor.b   3(%a0),%d7
-        eor.b   4(%a0),%d7
-'''
-          new = '''        moveq   #0,%d7
-        move.b  0(%a0),%d7
-        moveq   #0,%d0
-        move.b  1(%a0),%d0
-        eor.b   %d0,%d7
-        moveq   #0,%d0
-        move.b  2(%a0),%d0
-        eor.b   %d0,%d7
-        moveq   #0,%d0
-        move.b  3(%a0),%d0
-        eor.b   %d0,%d7
-        moveq   #0,%d0
-        move.b  4(%a0),%d0
-        eor.b   %d0,%d7
-'''
-          if old not in s:
-              raise SystemExit('expected checksum block not found')
-          p.write_text(s.replace(old, new, 1))
-          PY
+          python3 -c "from pathlib import Path; p=Path('src/platform/macplus/reset_m2_12.S'); s=p.read_text(); old='        moveq   #0,%d7\\n        move.b  0(%a0),%d7\\n        eor.b   1(%a0),%d7\\n        eor.b   2(%a0),%d7\\n        eor.b   3(%a0),%d7\\n        eor.b   4(%a0),%d7\\n'; new='        moveq   #0,%d7\\n        move.b  0(%a0),%d7\\n        moveq   #0,%d0\\n        move.b  1(%a0),%d0\\n        eor.b   %d0,%d7\\n        moveq   #0,%d0\\n        move.b  2(%a0),%d0\\n        eor.b   %d0,%d7\\n        moveq   #0,%d0\\n        move.b  3(%a0),%d0\\n        eor.b   %d0,%d7\\n        moveq   #0,%d0\\n        move.b  4(%a0),%d0\\n        eor.b   %d0,%d7\\n'; assert old in s, 'expected checksum block not found'; p.write_text(s.replace(old,new,1))"
           git config user.name 'Ploos-AS CI'
           git config user.email 'actions@users.noreply.github.com'
           git add src/platform/macplus/reset_m2_12.S
