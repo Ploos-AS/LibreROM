@@ -12,7 +12,7 @@ required_script = [
     "model = \"mac-plus\"",
     "size = 128K",
     "g b",
-    "d 0x400 8",
+    "d 400 8",
     "4C 52 4D 34",
     "45 58 43 34",
     "LibreROM M2.5 PCE qualification: PASS",
