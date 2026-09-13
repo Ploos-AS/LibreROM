@@ -200,10 +200,18 @@ _m2_12_address_symbols:
         move.l  #0x00000450,%a0
         moveq   #0,%d7
         move.b  0(%a0),%d7
-        eor.b   1(%a0),%d7
-        eor.b   2(%a0),%d7
-        eor.b   3(%a0),%d7
-        eor.b   4(%a0),%d7
+        moveq   #0,%d0
+        move.b  1(%a0),%d0
+        eor.b   %d0,%d7
+        moveq   #0,%d0
+        move.b  2(%a0),%d0
+        eor.b   %d0,%d7
+        moveq   #0,%d0
+        move.b  3(%a0),%d0
+        eor.b   %d0,%d7
+        moveq   #0,%d0
+        move.b  4(%a0),%d0
+        eor.b   %d0,%d7
         tst.b   %d7
         bne.w   _m2_12_find_address
 
