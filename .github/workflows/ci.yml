@@ -48,6 +48,9 @@ jobs:
       - name: Qualify M2.11 raw IWM floppy read path
         run: CROSS=m68k-linux-gnu- bash scripts/qualify_m2_11.sh
 
+      - name: Qualify M2.12 GCR sector-0 loader
+        run: CROSS=m68k-linux-gnu- bash scripts/qualify_m2_12.sh
+
       - name: Upload runtime evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -99,4 +102,11 @@ jobs:
             build/m2_11-pce/runtime-transcript.txt
             build/m2_11-pce/runtime.txt
             build/m2_11-pce/test-disk.psi
+            build/librom-m2.12-macplus.bin
+            build/librom-m2.12-macplus.map
+            build/m2_12-pce/libre-rom-sector-loader.cfg
+            build/m2_12-pce/runtime-transcript.txt
+            build/m2_12-pce/runtime.txt
+            build/m2_12-pce/test-disk.psi
+            build/m2_12-pce/sector0.bin
           if-no-files-found: warn
