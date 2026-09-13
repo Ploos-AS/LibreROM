@@ -76,7 +76,7 @@ EOF
     # Stop after backing-RAM vectors/PRE6 are installed, but before overlay-off.
     printf 'g b %X\n' "$BEFORE_ADDR"
     printf 'd 600000 8\n'
-    printf 'd 600408 4\n'
+    printf 'd 600400 12\n'
     printf 's cpu via\n'
 
     # Continue through the VIA transition and TRAP #0 handler.
@@ -94,7 +94,9 @@ EOF
 
 cat "$TRANSCRIPT"
 
-if ! grep -Eq '00600408[[:space:]]+50 52 45 36' "$TRANSCRIPT"; then
+# PCE aligns monitor dumps to 16-byte rows, so a request starting at 0x600408
+# is rendered on the 0x600400 row. Match the PRE6 byte sequence on that row.
+if ! grep -Eq '00600400.*50 52 45 36' "$TRANSCRIPT"; then
     echo "M2.6 FAIL: PRE6 was not visible through alternate RAM before overlay-off" >&2
     exit 1
 fi
