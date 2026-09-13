@@ -117,11 +117,19 @@ _m2_10_wait_keyboard:
          * IWM media sense.
          *
          * PCE models the classic Mac IWM soft-switch decode on odd byte
-         * addresses with one switch every 0x200 bytes.  VIA Port A bit 5
-         * selects sense bank 8 when CA0..CA2 are all low.  With Q7=0,Q6=1,
-         * reads return IWM status; bit 7 is 1 for no media and 0 for inserted
-         * media in sense bank 8.
+         * addresses with one switch every 0x200 bytes. VIA Port A bit 5
+         * selects sense bank 8 when CA0..CA2 are all low. Because a 6522
+         * only drives ORA bits whose DDRA bits are outputs, A5 must be made
+         * an output for the duration of this probe. With Q7=0,Q6=1, reads
+         * return IWM status; bit 7 is 1 for no media and 0 for inserted media
+         * in sense bank 8.
          */
+        move.l  #0x00efe600,%a0         /* VIA DDRA */
+        move.b  (%a0),%d6               /* preserve caller-visible direction */
+        move.b  %d6,%d0
+        ori.b   #0x20,%d0               /* A5 = output */
+        move.b  %d0,(%a0)
+
         move.l  #0x00efe200,%a0         /* VIA ORA: select sense bank 8 */
         move.b  (%a0),%d0
         ori.b   #0x20,%d0
@@ -150,11 +158,13 @@ _m2_10_iwm_done:
         move.l  #0x0000042c,%a0
         move.l  #0x49574d30,(%a0)       /* IWM0: probe completed */
 
-        /* Restore VIA Port A head/sense select low. */
+        /* Restore VIA Port A sense select and original data direction. */
         move.l  #0x00efe200,%a0
         move.b  (%a0),%d0
         andi.b  #0xdf,%d0
         move.b  %d0,(%a0)
+        move.l  #0x00efe600,%a0
+        move.b  %d6,(%a0)
 
         .globl _m2_10_stop
 _m2_10_stop:
