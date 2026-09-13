@@ -45,7 +45,8 @@ EOF
 
 cat "$TRANSCRIPT"
 
-grep -Eq '00000400.*4C 52 4D 38.*45 58 43 38.*50 52 45 38.*56 49 44 38.*49 52 51 38.*54 4D 52 38' "$TRANSCRIPT" || { echo "M2.8 FAIL: IRQ markers missing" >&2; exit 1; }
+grep -Eq '00000400.*4C 52 4D 38.*45 58 43 38.*50 52 45 38.*56 49 44 38' "$TRANSCRIPT" || { echo "M2.8 FAIL: continuity markers missing" >&2; exit 1; }
+grep -Eq '00000410.*49 52 51 38.*54 4D 52 38' "$TRANSCRIPT" || { echo "M2.8 FAIL: IRQ markers missing" >&2; exit 1; }
 grep -Eq '000FA700.*AA 55 AA 55' "$TRANSCRIPT" || { echo "M2.8 FAIL: main framebuffer regression" >&2; exit 1; }
 grep -Eq '000F2700.*AA 55 AA 55' "$TRANSCRIPT" || { echo "M2.8 FAIL: alternate framebuffer regression" >&2; exit 1; }
 grep -Eq 'IFR=00[[:space:]]+IER=00[[:space:]]+IRQ=0' "$TRANSCRIPT" || { echo "M2.8 FAIL: VIA IRQ not clean after acknowledgement" >&2; exit 1; }
