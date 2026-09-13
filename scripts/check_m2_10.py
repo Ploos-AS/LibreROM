@@ -11,6 +11,8 @@ required_src = [
     "LIBREROM-M2.10-MACPLUS-IWM-SENSE",
     "0x00efe600",
     "ori.b   #0x20,%d0               /* A5 = output */",
+    "andi.b  #0xdf,%d0               /* A5 low: establish known state */",
+    "ori.b   #0x20,%d0               /* A5 high: select sense bank 8 */",
     "0x00c00001",
     "0x00c00401",
     "0x00c00801",
