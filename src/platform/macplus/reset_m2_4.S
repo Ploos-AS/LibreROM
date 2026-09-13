@@ -14,12 +14,12 @@ _m2_4_reset:
         move.w  #0x2700,%sr
 
         /* Configure VIA A4 as output and remove reset ROM overlay. */
-        move.l  #0x00e80600,%a0
+        move.l  #0x00efe600,%a0
         move.b  (%a0),%d0
         ori.b   #0x10,%d0
         move.b  %d0,(%a0)
 
-        move.l  #0x00e80200,%a0
+        move.l  #0x00efe200,%a0
         move.b  (%a0),%d0
         andi.b  #0xef,%d0
         move.b  %d0,(%a0)
