@@ -20,7 +20,12 @@ M2_4_ELF := $(BUILD)/librom-m2.4-macplus.elf
 M2_4_ROM := $(BUILD)/librom-m2.4-macplus.bin
 M2_4_MAP := $(BUILD)/librom-m2.4-macplus.map
 
-.PHONY: all check check-m2 check-m2_1 check-m2_2 check-m2_3 check-m2_4 check-m2_5 qualify-m1 qualify-m1-runtime qualify-m2_1 qualify-m2_2 qualify-m2_3 qualify-m2_4 qualify-m2_5 clean
+M2_6_OBJ := $(BUILD)/m2_6-reset.o
+M2_6_ELF := $(BUILD)/librom-m2.6-macplus.elf
+M2_6_ROM := $(BUILD)/librom-m2.6-macplus.bin
+M2_6_MAP := $(BUILD)/librom-m2.6-macplus.map
+
+.PHONY: all check check-m2 check-m2_1 check-m2_2 check-m2_3 check-m2_4 check-m2_5 check-m2_6 qualify-m1 qualify-m1-runtime qualify-m2_1 qualify-m2_2 qualify-m2_3 qualify-m2_4 qualify-m2_5 qualify-m2_6 clean
 
 all: $(ROM)
 
@@ -57,6 +62,16 @@ $(M2_4_ROM): $(M2_4_ELF)
 	$(OBJCOPY) -O binary --gap-fill=0xff $< $@
 	$(PYTHON) scripts/pad_rom.py $@ 131072
 
+$(M2_6_OBJ): src/platform/macplus/reset_m2_6.S | $(BUILD)
+	$(AS) -m68000 -o $@ $<
+
+$(M2_6_ELF): $(M2_6_OBJ) linker/m2_6.ld
+	$(LD) -T linker/m2_6.ld -Map=$(M2_6_MAP) -o $@ $(M2_6_OBJ)
+
+$(M2_6_ROM): $(M2_6_ELF)
+	$(OBJCOPY) -O binary --gap-fill=0xff $< $@
+	$(PYTHON) scripts/pad_rom.py $@ 131072
+
 check:
 	$(PYTHON) scripts/check_m0.py
 	$(PYTHON) scripts/check_m1.py
@@ -66,6 +81,7 @@ check:
 	$(PYTHON) scripts/check_m2_3.py
 	$(PYTHON) scripts/check_m2_4.py
 	$(PYTHON) scripts/check_m2_5.py
+	$(PYTHON) scripts/check_m2_6.py
 
 check-m2:
 	$(PYTHON) scripts/check_m2.py
@@ -84,6 +100,9 @@ check-m2_4:
 
 check-m2_5:
 	$(PYTHON) scripts/check_m2_5.py
+
+check-m2_6:
+	$(PYTHON) scripts/check_m2_6.py
 
 qualify-m1: $(ROM)
 	$(PYTHON) scripts/qualify_m1.py $(ROM)
@@ -110,6 +129,11 @@ qualify-m2_4: $(M2_4_ROM)
 qualify-m2_5: $(M2_4_ROM) $(M2_4_ELF)
 	$(PYTHON) scripts/check_m2_5.py
 	CROSS=$(CROSS) bash scripts/qualify_m2_5_pce.sh $(M2_4_ROM) $(M2_4_ELF)
+
+qualify-m2_6: $(M2_6_ROM) $(M2_6_ELF)
+	$(PYTHON) scripts/check_m2_6.py
+	bash scripts/qualify_m2_6_runtime.sh $(M2_6_ROM)
+	CROSS=$(CROSS) bash scripts/qualify_m2_6_pce.sh $(M2_6_ROM) $(M2_6_ELF)
 
 clean:
 	rm -rf $(BUILD)
