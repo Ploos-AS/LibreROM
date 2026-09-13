@@ -25,8 +25,11 @@ STOP_HEX=$(${CROSS:-m68k-linux-gnu-}nm -n "$ELF" | awk '$3 == "_m2_10_stop" {pri
 STOP_ADDR=$((16#$STOP_HEX))
 
 # Project-authored raw 400 KiB / 800-block single-sided test medium.
-truncate -s 409600 "$DISK"
+# Use a fully materialised file and let PCE auto-detect .img exactly like its
+# documented Mac Plus sample configuration.
+dd if=/dev/zero of="$DISK" bs=512 count=800 status=none
 printf 'LIBREROM-IWM-M10' | dd of="$DISK" conv=notrunc status=none
+[ "$(stat -c %s "$DISK")" -eq 409600 ] || exit 1
 
 git clone --quiet https://github.com/notpeter/PCE.git "$SRC"
 git -C "$SRC" checkout --quiet --detach "$PCE_COMMIT"
@@ -55,8 +58,9 @@ iwm {
 }
 disk {
   drive    = 1
-  type     = "image"
-  file     = "$DISK"
+  type     = "auto"
+  file     = "test-disk.img"
+  readonly = 1
   optional = 0
 }
 EOF
@@ -97,7 +101,7 @@ grep -Eq '00000420.*49 57 4D 50.*49 57 4D 30' "$MEDIA_TRANSCRIPT"
     echo "iwm_status_address=0x00C01A01"
     echo "iwm_q7_low_address=0x00C01C01"
     echo "sense_bank=8"
-    echo "fixture_type=image"
+    echo "fixture_type=auto-img"
     echo "fixture_blocks=800"
     sha256sum "$ROM" "$DISK"
     echo "LibreROM M2.10 PCE qualification: PASS"
