@@ -20,7 +20,7 @@ M2_4_ELF := $(BUILD)/librom-m2.4-macplus.elf
 M2_4_ROM := $(BUILD)/librom-m2.4-macplus.bin
 M2_4_MAP := $(BUILD)/librom-m2.4-macplus.map
 
-.PHONY: all check check-m2 check-m2_1 check-m2_2 check-m2_3 check-m2_4 qualify-m1 qualify-m1-runtime qualify-m2_1 qualify-m2_2 qualify-m2_3 qualify-m2_4 clean
+.PHONY: all check check-m2 check-m2_1 check-m2_2 check-m2_3 check-m2_4 check-m2_5 qualify-m1 qualify-m1-runtime qualify-m2_1 qualify-m2_2 qualify-m2_3 qualify-m2_4 qualify-m2_5 clean
 
 all: $(ROM)
 
@@ -65,6 +65,7 @@ check:
 	$(PYTHON) scripts/check_m2_2.py
 	$(PYTHON) scripts/check_m2_3.py
 	$(PYTHON) scripts/check_m2_4.py
+	$(PYTHON) scripts/check_m2_5.py
 
 check-m2:
 	$(PYTHON) scripts/check_m2.py
@@ -80,6 +81,9 @@ check-m2_3:
 
 check-m2_4:
 	$(PYTHON) scripts/check_m2_4.py
+
+check-m2_5:
+	$(PYTHON) scripts/check_m2_5.py
 
 qualify-m1: $(ROM)
 	$(PYTHON) scripts/qualify_m1.py $(ROM)
@@ -102,6 +106,10 @@ qualify-m2_3: $(M2_3_ROM)
 qualify-m2_4: $(M2_4_ROM)
 	$(PYTHON) scripts/check_m2_4.py
 	bash scripts/qualify_m2_4_runtime.sh $(M2_4_ROM)
+
+qualify-m2_5: $(M2_4_ROM) $(M2_4_ELF)
+	$(PYTHON) scripts/check_m2_5.py
+	CROSS=$(CROSS) bash scripts/qualify_m2_5_pce.sh $(M2_4_ROM) $(M2_4_ELF)
 
 clean:
 	rm -rf $(BUILD)
