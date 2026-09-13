@@ -45,6 +45,9 @@ jobs:
       - name: Qualify M2.10 IWM media-sense path
         run: make CROSS=m68k-linux-gnu- qualify-m2_10
 
+      - name: Qualify M2.11 raw IWM floppy read path
+        run: CROSS=m68k-linux-gnu- bash scripts/qualify_m2_11.sh
+
       - name: Upload runtime evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -90,4 +93,10 @@ jobs:
             build/m2_10-pce/media-runtime.txt
             build/m2_10-pce/runtime.txt
             build/m2_10-pce/test-disk.psi
+            build/librom-m2.11-macplus.bin
+            build/librom-m2.11-macplus.map
+            build/m2_11-pce/libre-rom-iwm-read.cfg
+            build/m2_11-pce/runtime-transcript.txt
+            build/m2_11-pce/runtime.txt
+            build/m2_11-pce/test-disk.psi
           if-no-files-found: warn
