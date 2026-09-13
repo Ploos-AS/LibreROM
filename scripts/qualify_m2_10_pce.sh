@@ -7,7 +7,7 @@ ELF=${2:-"$ROOT/build/librom-m2.10-macplus.elf"}
 PCE_COMMIT=371414f8f41ae02e9ce36004ba7b076fdd3abe63
 WORK="$ROOT/build/m2_10-pce"
 SRC="$WORK/PCE"
-DISK="$WORK/test-disk.img"
+DISK="$WORK/test-disk.psi"
 CFG_EMPTY="$WORK/libre-rom-iwm-empty.cfg"
 CFG_MEDIA="$WORK/libre-rom-iwm-media.cfg"
 EMPTY_TRANSCRIPT="$WORK/empty-runtime.txt"
@@ -24,18 +24,17 @@ STOP_HEX=$(${CROSS:-m68k-linux-gnu-}nm -n "$ELF" | awk '$3 == "_m2_10_stop" {pri
 [ -n "$STOP_HEX" ] || exit 1
 STOP_ADDR=$((16#$STOP_HEX))
 
-# Project-authored 400 KiB / 800-block single-sided test medium.  PCE's
-# generic raw-image autodetection is deliberately avoided here: the pinned
-# PCE build loads this fixture through its RAM-disk backend with an explicit
-# 800-block geometry.  The Mac Plus IWM layer then consumes the ordinary
-# block device and performs its own Macintosh GCR encoding.
-dd if=/dev/zero of="$DISK" bs=512 count=800 status=none
-printf 'LIBREROM-IWM-M10' | dd of="$DISK" conv=notrunc status=none
-[ "$(stat -c %s "$DISK")" -eq 409600 ] || exit 1
-
 git clone --quiet https://github.com/notpeter/PCE.git "$SRC"
 git -C "$SRC" checkout --quiet --detach "$PCE_COMMIT"
-(cd "$SRC" && ./autogen.sh && ./configure --with-sdl=no >/dev/null && make -s src/arch/macplus/pce-macplus)
+(cd "$SRC" && ./autogen.sh && ./configure --with-sdl=no >/dev/null && make -s src/arch/macplus/pce-macplus src/utils/psi/psi)
+
+# Create the qualification medium with PCE's own native Macintosh sector-image
+# utility. This avoids generic block-image geometry/autodetection entirely:
+# PCE opens the file as PCE_DISK_PSI and the Mac Plus IWM layer GCR-encodes
+# that sector image directly. The image is project-authored and contains no
+# Apple ROM or System software.
+"$SRC/src/utils/psi/psi" -N mac 800 -O psi -o "$DISK"
+[ -s "$DISK" ] || exit 1
 
 write_cfg() {
     local cfg=$1
@@ -60,8 +59,7 @@ iwm {
 }
 disk {
   drive    = 1
-  type     = "ram"
-  blocks   = 800
+  type     = "psi"
   file     = "$DISK"
   readonly = 1
   optional = 0
@@ -89,7 +87,8 @@ run_case "$CFG_MEDIA" "$MEDIA_TRANSCRIPT"
 cat "$EMPTY_TRANSCRIPT"
 cat "$MEDIA_TRANSCRIPT"
 
-# The fixture itself must load in both cases; only insertion state differs.
+# The native PSI fixture must be available in both cases; only insertion state
+# differs. Empty media must report IWMN, inserted media must report IWMP.
 ! grep -q 'loading drive 0x01 failed' "$EMPTY_TRANSCRIPT"
 ! grep -q 'loading drive 0x01 failed' "$MEDIA_TRANSCRIPT"
 
@@ -104,8 +103,8 @@ grep -Eq '00000420.*49 57 4D 50.*49 57 4D 30' "$MEDIA_TRANSCRIPT"
     echo "iwm_status_address=0x00C01A01"
     echo "iwm_q7_low_address=0x00C01C01"
     echo "sense_bank=8"
-    echo "fixture_type=ram-block-device"
-    echo "fixture_blocks=800"
+    echo "fixture_type=psi"
+    echo "fixture_geometry=mac-800"
     sha256sum "$ROM" "$DISK"
     echo "LibreROM M2.10 PCE qualification: PASS"
 } | tee "$WORK/runtime.txt"
