@@ -47,6 +47,14 @@ _m2_4_reset:
         move.l  #0x00000400,%a0
         move.l  #0x4c524d34,(%a0)       /* "LRM4" */
 
+        /*
+         * Keep the live supervisor stack below the top-of-RAM probe. TRAP #0
+         * pushes an exception frame; leaving SSP at 0x00100000 would correctly
+         * use the probed top longword and make a restored probe look corrupted.
+         * The reset vector still advertises the canonical top-of-RAM SSP.
+         */
+        move.l  #0x000ff000,%a7
+
         /* Prove vectors are active from RAM: TRAP #0 uses vector 32. */
         trap    #0
 
