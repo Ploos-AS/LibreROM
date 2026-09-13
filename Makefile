@@ -40,7 +40,12 @@ M2_9_ELF := $(BUILD)/librom-m2.9-macplus.elf
 M2_9_ROM := $(BUILD)/librom-m2.9-macplus.bin
 M2_9_MAP := $(BUILD)/librom-m2.9-macplus.map
 
-.PHONY: all check check-m2 check-m2_1 check-m2_2 check-m2_3 check-m2_4 check-m2_5 check-m2_6 check-m2_7 check-m2_8 check-m2_9 qualify-m1 qualify-m1-runtime qualify-m2_1 qualify-m2_2 qualify-m2_3 qualify-m2_4 qualify-m2_5 qualify-m2_6 qualify-m2_7 qualify-m2_8 qualify-m2_9 clean
+M2_10_OBJ := $(BUILD)/m2_10-reset.o
+M2_10_ELF := $(BUILD)/librom-m2.10-macplus.elf
+M2_10_ROM := $(BUILD)/librom-m2.10-macplus.bin
+M2_10_MAP := $(BUILD)/librom-m2.10-macplus.map
+
+.PHONY: all check check-m2 check-m2_1 check-m2_2 check-m2_3 check-m2_4 check-m2_5 check-m2_6 check-m2_7 check-m2_8 check-m2_9 check-m2_10 qualify-m1 qualify-m1-runtime qualify-m2_1 qualify-m2_2 qualify-m2_3 qualify-m2_4 qualify-m2_5 qualify-m2_6 qualify-m2_7 qualify-m2_8 qualify-m2_9 qualify-m2_10 clean
 
 all: $(ROM)
 
@@ -117,6 +122,16 @@ $(M2_9_ROM): $(M2_9_ELF)
 	$(OBJCOPY) -O binary --gap-fill=0xff $< $@
 	$(PYTHON) scripts/pad_rom.py $@ 131072
 
+$(M2_10_OBJ): src/platform/macplus/reset_m2_10.S | $(BUILD)
+	$(AS) -m68000 -o $@ $<
+
+$(M2_10_ELF): $(M2_10_OBJ) linker/m2_10.ld
+	$(LD) -T linker/m2_10.ld -Map=$(M2_10_MAP) -o $@ $(M2_10_OBJ)
+
+$(M2_10_ROM): $(M2_10_ELF)
+	$(OBJCOPY) -O binary --gap-fill=0xff $< $@
+	$(PYTHON) scripts/pad_rom.py $@ 131072
+
 check:
 	$(PYTHON) scripts/check_m0.py
 	$(PYTHON) scripts/check_m1.py
@@ -130,6 +145,7 @@ check:
 	$(PYTHON) scripts/check_m2_7.py
 	$(PYTHON) scripts/check_m2_8.py
 	$(PYTHON) scripts/check_m2_9.py
+	$(PYTHON) scripts/check_m2_10.py
 
 check-m2:
 	$(PYTHON) scripts/check_m2.py
@@ -160,6 +176,9 @@ check-m2_8:
 
 check-m2_9:
 	$(PYTHON) scripts/check_m2_9.py
+
+check-m2_10:
+	$(PYTHON) scripts/check_m2_10.py
 
 qualify-m1: $(ROM)
 	$(PYTHON) scripts/qualify_m1.py $(ROM)
@@ -206,6 +225,10 @@ qualify-m2_9: $(M2_9_ROM) $(M2_9_ELF)
 	$(PYTHON) scripts/check_m2_9.py
 	bash scripts/qualify_m2_9_runtime.sh $(M2_9_ROM)
 	CROSS=$(CROSS) bash scripts/qualify_m2_9_pce.sh $(M2_9_ROM) $(M2_9_ELF)
+
+qualify-m2_10: $(M2_10_ROM) $(M2_10_ELF)
+	$(PYTHON) scripts/check_m2_10.py
+	CROSS=$(CROSS) bash scripts/qualify_m2_10_pce.sh $(M2_10_ROM) $(M2_10_ELF)
 
 clean:
 	rm -rf $(BUILD)
