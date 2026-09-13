@@ -1,6 +1,6 @@
 # M2.1 — Reset overlay and RAM hand-off
 
-LibreROM M2.1 defines the first machine-specific reset transition for the Macintosh Plus profile.
+LibreROM M2.1 defines the first machine-specific reset-overlay transition for the Macintosh Plus profile.
 
 ## Goal
 
