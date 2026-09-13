@@ -24,3 +24,5 @@ jobs:
           git add src/platform/macplus/reset_m2_13.S linker/m2_13.ld scripts/check_m2_13.py scripts/qualify_m2_13.sh scripts/qualify_m2_13_pce.sh docs/M2_13_BOOT_TRANSFER_QUALIFICATION.md Makefile .github/workflows/ci.yml
           git commit -m "M2.13: add loaded boot control transfer"
           git push origin HEAD:main
+
+# rerun after M2.12 documentation path repair
