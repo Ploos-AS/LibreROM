@@ -24,6 +24,9 @@ jobs:
       - name: Build and qualify M2.3 Mac Plus path
         run: make CROSS=m68k-linux-gnu- qualify-m2_3
 
+      - name: Build and qualify M2.4 RAM/vector path
+        run: make CROSS=m68k-linux-gnu- qualify-m2_4
+
       - name: Upload runtime evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -36,4 +39,7 @@ jobs:
             build/librom-m2.3-macplus.bin
             build/librom-m2.3-macplus.map
             build/m2_3-runtime/runtime.txt
+            build/librom-m2.4-macplus.bin
+            build/librom-m2.4-macplus.map
+            build/m2_4-runtime/runtime.txt
           if-no-files-found: warn
