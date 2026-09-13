@@ -27,7 +27,8 @@ required = {
     "scripts/qualify_m2_6_pce.sh": [
         "_m2_6_before_overlay_off",
         "d 600000 8",
-        "d 600408 4",
+        "d 600400 12",
+        "00600400.*50 52 45 36",
         "d 400 12",
         "LibreROM M2.6 PCE qualification: PASS",
     ],
