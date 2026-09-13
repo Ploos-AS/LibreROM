@@ -28,12 +28,12 @@ git clone --quiet https://github.com/notpeter/PCE.git "$SRC"
 git -C "$SRC" checkout --quiet --detach "$PCE_COMMIT"
 (cd "$SRC" && ./autogen.sh && ./configure --with-sdl=no >/dev/null && make -s src/arch/macplus/pce-macplus src/utils/psi/psi)
 
-# Create the qualification medium with PCE's own native Macintosh sector-image
-# utility. This avoids generic block-image geometry/autodetection entirely:
-# PCE opens the file as PCE_DISK_PSI and the Mac Plus IWM layer GCR-encodes
-# that sector image directly. The image is project-authored and contains no
-# Apple ROM or System software.
-"$SRC/src/utils/psi/psi" -N mac 800 -O psi -o "$DISK"
+# Create a project-owned single-sided Macintosh 400 KiB sector image with
+# PCE's own PSI utility. PCE's psi_new_mac() maps 400 KiB to one head and
+# 800 KiB to two heads, so 400 KiB must be used with single_sided = 1.
+# The Mac Plus IWM layer GCR-encodes this PSI image directly. No Apple ROM or
+# System software is used.
+"$SRC/src/utils/psi/psi" -N mac 400 -O psi -o "$DISK"
 [ -s "$DISK" ] || exit 1
 
 write_cfg() {
@@ -71,10 +71,12 @@ run_case() {
     local cfg=$1
     local transcript=$2
     {
+        printf 'm emu.iwm.status\n'
         printf 'g b %X\n' "$STOP_ADDR"
         printf 'd 400 30\n'
         printf 'd 420 10\n'
         printf 's cpu via\n'
+        printf 'm emu.iwm.status\n'
         printf 'm emu.exit\n'
     } | timeout 30 "$SRC/src/arch/macplus/pce-macplus" -q -c "$cfg" -t null >"$transcript" 2>&1
 }
@@ -89,8 +91,8 @@ cat "$MEDIA_TRANSCRIPT"
 
 # The native PSI fixture must be available in both cases; only insertion state
 # differs. Empty media must report IWMN, inserted media must report IWMP.
-! grep -q 'loading drive 0x01 failed' "$EMPTY_TRANSCRIPT"
-! grep -q 'loading drive 0x01 failed' "$MEDIA_TRANSCRIPT"
+! grep -q 'loading drive 1 failed' "$EMPTY_TRANSCRIPT"
+! grep -q 'loading drive 1 failed' "$MEDIA_TRANSCRIPT"
 
 grep -Eq '00000420.*49 4E 31 30' "$EMPTY_TRANSCRIPT"
 grep -Eq '00000420.*49 57 4D 4E.*49 57 4D 30' "$EMPTY_TRANSCRIPT"
@@ -104,7 +106,7 @@ grep -Eq '00000420.*49 57 4D 50.*49 57 4D 30' "$MEDIA_TRANSCRIPT"
     echo "iwm_q7_low_address=0x00C01C01"
     echo "sense_bank=8"
     echo "fixture_type=psi"
-    echo "fixture_geometry=mac-800"
+    echo "fixture_geometry=mac-400-single-sided"
     sha256sum "$ROM" "$DISK"
     echo "LibreROM M2.10 PCE qualification: PASS"
 } | tee "$WORK/runtime.txt"
