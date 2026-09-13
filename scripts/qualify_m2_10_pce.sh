@@ -26,13 +26,16 @@ STOP_ADDR=$((16#$STOP_HEX))
 
 git clone --quiet https://github.com/notpeter/PCE.git "$SRC"
 git -C "$SRC" checkout --quiet --detach "$PCE_COMMIT"
+
+# Qualification-only instrumentation of the pinned independent emulator.
+# DEBUG_IWM=4 makes PCE report selected drive, sense register and inserted
+# state. This changes diagnostics only, not the emulated IWM behaviour.
+sed -i 's/^#define DEBUG_IWM 0$/#define DEBUG_IWM 4/' "$SRC/src/arch/macplus/iwm.c"
+
+grep -q '^#define DEBUG_IWM 4$' "$SRC/src/arch/macplus/iwm.c"
 (cd "$SRC" && ./autogen.sh && ./configure --with-sdl=no >/dev/null && make -s src/arch/macplus/pce-macplus src/utils/psi/psi)
 
-# Create a project-owned single-sided Macintosh 400 KiB sector image with
-# PCE's own PSI utility. PCE's psi_new_mac() maps 400 KiB to one head and
-# 800 KiB to two heads, so 400 KiB must be used with single_sided = 1.
-# The Mac Plus IWM layer GCR-encodes this PSI image directly. No Apple ROM or
-# System software is used.
+# Project-owned single-sided Macintosh 400 KiB PSI fixture.
 "$SRC/src/utils/psi/psi" -N mac 400 -O psi -o "$DISK"
 [ -s "$DISK" ] || exit 1
 
@@ -71,13 +74,11 @@ run_case() {
     local cfg=$1
     local transcript=$2
     {
-        printf 'm emu.iwm.status\n'
         printf 'g b %X\n' "$STOP_ADDR"
         printf 'd 400 30\n'
         printf 'd 420 10\n'
         printf 's cpu via\n'
-        printf 'm emu.iwm.status\n'
-        printf 'm emu.exit\n'
+        printf 'q\n'
     } | timeout 30 "$SRC/src/arch/macplus/pce-macplus" -q -c "$cfg" -t null >"$transcript" 2>&1
 }
 
@@ -89,8 +90,6 @@ run_case "$CFG_MEDIA" "$MEDIA_TRANSCRIPT"
 cat "$EMPTY_TRANSCRIPT"
 cat "$MEDIA_TRANSCRIPT"
 
-# The native PSI fixture must be available in both cases; only insertion state
-# differs. Empty media must report IWMN, inserted media must report IWMP.
 ! grep -q 'loading drive 1 failed' "$EMPTY_TRANSCRIPT"
 ! grep -q 'loading drive 1 failed' "$MEDIA_TRANSCRIPT"
 
@@ -102,6 +101,7 @@ grep -Eq '00000420.*49 57 4D 50.*49 57 4D 30' "$MEDIA_TRANSCRIPT"
 {
     echo "pce_commit=$PCE_COMMIT"
     printf 'stop_address=0x%X\n' "$STOP_ADDR"
+    echo "iwm_debug=4"
     echo "iwm_status_address=0x00C01A01"
     echo "iwm_q7_low_address=0x00C01C01"
     echo "sense_bank=8"
