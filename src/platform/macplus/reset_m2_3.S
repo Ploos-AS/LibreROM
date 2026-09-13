@@ -16,14 +16,14 @@ _m2_3_vectors:
 _m2_3_reset:
         move.w  #0x2700,%sr     /* supervisor, interrupts masked */
 
-        /* VIA DDRA is at 0xE80600. Make port A bit 4 an output. */
-        move.l  #0x00e80600,%a0
+        /* VIA DDRA at canonical Mac Plus mirror $EFE600. Make A4 an output. */
+        move.l  #0x00efe600,%a0
         move.b  (%a0),%d0
         ori.b   #0x10,%d0
         move.b  %d0,(%a0)
 
-        /* VIA ORA is at 0xE80200. Clear A4 to remove the reset ROM overlay. */
-        move.l  #0x00e80200,%a0
+        /* VIA ORA at $EFE200. Clear A4 to remove the reset ROM overlay. */
+        move.l  #0x00efe200,%a0
         move.b  (%a0),%d0
         andi.b  #0xef,%d0
         move.b  %d0,(%a0)
