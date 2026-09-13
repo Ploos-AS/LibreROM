@@ -34,8 +34,8 @@ required = {
     "scripts/qualify_m2_8_pce.sh": [
         "cpu_interrupt_level=1",
         "via_timer1_ifr_bit=0x40",
-        "IRQ8",
-        "TMR8",
+        "49 52 51 38",
+        "54 4D 52 38",
         "LibreROM M2.8 PCE qualification: PASS",
     ],
 }
