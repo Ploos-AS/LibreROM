@@ -30,6 +30,9 @@ jobs:
       - name: Qualify M2.5 in independent PCE Mac Plus model
         run: make CROSS=m68k-linux-gnu- qualify-m2_5
 
+      - name: Qualify M2.6 ordered reset-overlay hand-off
+        run: make CROSS=m68k-linux-gnu- qualify-m2_6
+
       - name: Upload runtime evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -47,4 +50,9 @@ jobs:
             build/m2_4-runtime/runtime.txt
             build/m2_5-pce/libre-rom-mac-plus.cfg
             build/m2_5-pce/runtime.txt
+            build/librom-m2.6-macplus.bin
+            build/librom-m2.6-macplus.map
+            build/m2_6-runtime/runtime.txt
+            build/m2_6-pce/libre-rom-mac-plus.cfg
+            build/m2_6-pce/runtime.txt
           if-no-files-found: warn
