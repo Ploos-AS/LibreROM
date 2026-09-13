@@ -136,7 +136,7 @@ _m2_11_wait_keyboard:
         move.l  #0x00000424,%a0
         move.b  %d0,(%a0)
         btst    #7,%d0
-        bne.s   _m2_11_no_media
+        bne.w   _m2_11_no_media
 
         move.l  #0x00000428,%a0
         move.l  #0x49574d50,(%a0)       /* IWMP */
@@ -193,7 +193,7 @@ _m2_11_read_done:
         move.b  0x00c00c01,%d0
         move.l  #0x00efe600,%a0
         move.b  %d6,(%a0)
-        bra.s   _m2_11_stop
+        bra.w   _m2_11_stop
 
 _m2_11_no_media:
         move.l  #0x00000428,%a0
