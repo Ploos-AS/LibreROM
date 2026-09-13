@@ -25,7 +25,12 @@ M2_6_ELF := $(BUILD)/librom-m2.6-macplus.elf
 M2_6_ROM := $(BUILD)/librom-m2.6-macplus.bin
 M2_6_MAP := $(BUILD)/librom-m2.6-macplus.map
 
-.PHONY: all check check-m2 check-m2_1 check-m2_2 check-m2_3 check-m2_4 check-m2_5 check-m2_6 qualify-m1 qualify-m1-runtime qualify-m2_1 qualify-m2_2 qualify-m2_3 qualify-m2_4 qualify-m2_5 qualify-m2_6 clean
+M2_7_OBJ := $(BUILD)/m2_7-reset.o
+M2_7_ELF := $(BUILD)/librom-m2.7-macplus.elf
+M2_7_ROM := $(BUILD)/librom-m2.7-macplus.bin
+M2_7_MAP := $(BUILD)/librom-m2.7-macplus.map
+
+.PHONY: all check check-m2 check-m2_1 check-m2_2 check-m2_3 check-m2_4 check-m2_5 check-m2_6 check-m2_7 qualify-m1 qualify-m1-runtime qualify-m2_1 qualify-m2_2 qualify-m2_3 qualify-m2_4 qualify-m2_5 qualify-m2_6 qualify-m2_7 clean
 
 all: $(ROM)
 
@@ -72,6 +77,16 @@ $(M2_6_ROM): $(M2_6_ELF)
 	$(OBJCOPY) -O binary --gap-fill=0xff $< $@
 	$(PYTHON) scripts/pad_rom.py $@ 131072
 
+$(M2_7_OBJ): src/platform/macplus/reset_m2_7.S | $(BUILD)
+	$(AS) -m68000 -o $@ $<
+
+$(M2_7_ELF): $(M2_7_OBJ) linker/m2_7.ld
+	$(LD) -T linker/m2_7.ld -Map=$(M2_7_MAP) -o $@ $(M2_7_OBJ)
+
+$(M2_7_ROM): $(M2_7_ELF)
+	$(OBJCOPY) -O binary --gap-fill=0xff $< $@
+	$(PYTHON) scripts/pad_rom.py $@ 131072
+
 check:
 	$(PYTHON) scripts/check_m0.py
 	$(PYTHON) scripts/check_m1.py
@@ -82,6 +97,7 @@ check:
 	$(PYTHON) scripts/check_m2_4.py
 	$(PYTHON) scripts/check_m2_5.py
 	$(PYTHON) scripts/check_m2_6.py
+	$(PYTHON) scripts/check_m2_7.py
 
 check-m2:
 	$(PYTHON) scripts/check_m2.py
@@ -103,6 +119,9 @@ check-m2_5:
 
 check-m2_6:
 	$(PYTHON) scripts/check_m2_6.py
+
+check-m2_7:
+	$(PYTHON) scripts/check_m2_7.py
 
 qualify-m1: $(ROM)
 	$(PYTHON) scripts/qualify_m1.py $(ROM)
@@ -134,6 +153,11 @@ qualify-m2_6: $(M2_6_ROM) $(M2_6_ELF)
 	$(PYTHON) scripts/check_m2_6.py
 	bash scripts/qualify_m2_6_runtime.sh $(M2_6_ROM)
 	CROSS=$(CROSS) bash scripts/qualify_m2_6_pce.sh $(M2_6_ROM) $(M2_6_ELF)
+
+qualify-m2_7: $(M2_7_ROM) $(M2_7_ELF)
+	$(PYTHON) scripts/check_m2_7.py
+	bash scripts/qualify_m2_7_runtime.sh $(M2_7_ROM)
+	CROSS=$(CROSS) bash scripts/qualify_m2_7_pce.sh $(M2_7_ROM) $(M2_7_ELF)
 
 clean:
 	rm -rf $(BUILD)
