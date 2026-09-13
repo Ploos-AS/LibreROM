@@ -108,7 +108,10 @@ if ! grep -Eq '00000000[[:space:]]+00 10 00 00' "$TRANSCRIPT"; then
     echo "M2.6 FAIL: preinstalled RAM vectors were not visible at low memory after overlay-off" >&2
     exit 1
 fi
-if ! grep -Eq '00000400[[:space:]]+4C 52 4D 36[[:space:]]+45 58 43 36[[:space:]]+50 52 45 36' "$TRANSCRIPT"; then
+# PCE inserts a '-' separator between byte 7 and byte 8 in each 16-byte row.
+# Accept that separator (or ordinary whitespace) while still requiring all three
+# continuity markers in the exact LRM6, EXC6, PRE6 order.
+if ! grep -Eq '00000400[[:space:]]+4C 52 4D 36[[:space:]]+45 58 43 36([-[:space:]]+)50 52 45 36' "$TRANSCRIPT"; then
     echo "M2.6 FAIL: LRM6/EXC6/PRE6 continuity markers missing" >&2
     exit 1
 fi
