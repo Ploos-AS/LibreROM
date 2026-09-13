@@ -23,7 +23,7 @@ _m2_6_reset:
         move.l  #0xa55aa55a,(%a0)
         move.l  (%a0),%d2
         cmpi.l  #0xa55aa55a,%d2
-        bne.s   _m2_6_ram_fail_alt
+        bne.w   _m2_6_ram_fail_alt
         move.l  %d3,(%a0)
 
         /*
@@ -61,10 +61,10 @@ _m2_6_before_overlay_off:
         move.l  #0x00000000,%a0
         move.l  (%a0)+,%d2
         cmpi.l  #0x00100000,%d2
-        bne.s   _m2_6_ram_fail_low
+        bne.w   _m2_6_ram_fail_low
         move.l  (%a0),%d2
         cmpi.l  #_m2_6_reset,%d2
-        bne.s   _m2_6_ram_fail_low
+        bne.w   _m2_6_ram_fail_low
 
         /* Observable post-hand-off marker; PRE6 at 0x408 must remain intact. */
         move.l  #0x00000400,%a0
