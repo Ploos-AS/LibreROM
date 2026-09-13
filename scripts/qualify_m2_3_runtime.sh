@@ -19,7 +19,7 @@ make -C "$SRC" -s all
 gcc -std=c11 -Wall -Wextra -Werror -O2 \
     -I"$SRC" \
     "$ROOT/tests/m2_3_runtime.c" \
-    "$SRC/m68kcpu.o" "$SRC/m68kdasm.o" "$SRC/m68kops.o" "$SRC/softfloat/softfloat.o" \
+    "$SRC/m68kcpu.o" "$SRC/m68kops.o" "$SRC/softfloat/softfloat.o" \
     -lm -o "$BIN"
 
 "$BIN" "$ROM" | tee "$EVIDENCE"
