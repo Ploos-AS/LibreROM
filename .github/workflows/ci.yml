@@ -46,10 +46,13 @@ jobs:
         run: make CROSS=m68k-linux-gnu- qualify-m2_10
 
       - name: Qualify M2.11 raw IWM floppy read path
-        run: CROSS=m68k-linux-gnu- bash scripts/qualify_m2_11.sh
+        run: make CROSS=m68k-linux-gnu- qualify-m2_11
 
       - name: Qualify M2.12 GCR sector-0 loader
-        run: CROSS=m68k-linux-gnu- bash scripts/qualify_m2_12.sh
+        run: make CROSS=m68k-linux-gnu- qualify-m2_12
+
+      - name: Qualify M2.13 loaded boot control transfer
+        run: make CROSS=m68k-linux-gnu- qualify-m2_13
 
       - name: Upload runtime evidence
         if: always()
@@ -109,4 +112,11 @@ jobs:
             build/m2_12-pce/runtime.txt
             build/m2_12-pce/test-disk.psi
             build/m2_12-pce/sector0.bin
+            build/librom-m2.13-macplus.bin
+            build/librom-m2.13-macplus.map
+            build/m2_13-pce/libre-rom-sector-loader.cfg
+            build/m2_13-pce/runtime-transcript.txt
+            build/m2_13-pce/runtime.txt
+            build/m2_13-pce/test-disk.psi
+            build/m2_13-pce/sector0.bin
           if-no-files-found: warn
