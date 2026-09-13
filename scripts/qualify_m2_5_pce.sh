@@ -72,11 +72,17 @@ sony {
 EOF
 
 {
-    # PCE monitor numeric constants are hexadecimal without a 0x prefix.
-    printf 'g b %X\n' "$STOP_ADDR"
+    # PCE has a dedicated Mac monitor command for running until a CPU
+    # exception. TRAP #0 is exception vector 32, so stop there rather than
+    # relying on an address breakpoint at the subsequent STOP instruction.
+    printf 'g e 20\n'
+    # Execute the two handler instructions which write the EXC4 marker, but
+    # deliberately do not execute the STOP at _m2_4_stop.
+    printf 'p 2\n'
     printf 'd 400 8\n'
-    printf 's cpu via\n'
-    printf 'm emu.exit\n'
+    printf 's cpu\n'
+    printf 's via\n'
+    printf 'q\n'
 } | timeout 30 "$SRC/src/arch/macplus/pce-macplus" -q -c "$CFG" -t null >"$TRANSCRIPT" 2>&1 || {
     rc=$?
     cat "$TRANSCRIPT" >&2 || true
