@@ -42,6 +42,9 @@ jobs:
       - name: Qualify M2.9 keyboard VIA shift-register path
         run: make CROSS=m68k-linux-gnu- qualify-m2_9
 
+      - name: Qualify M2.10 IWM media-sense path
+        run: make CROSS=m68k-linux-gnu- qualify-m2_10
+
       - name: Upload runtime evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -79,4 +82,12 @@ jobs:
             build/m2_9-runtime/runtime.txt
             build/m2_9-pce/libre-rom-mac-plus.cfg
             build/m2_9-pce/runtime.txt
+            build/librom-m2.10-macplus.bin
+            build/librom-m2.10-macplus.map
+            build/m2_10-pce/libre-rom-iwm-empty.cfg
+            build/m2_10-pce/libre-rom-iwm-media.cfg
+            build/m2_10-pce/empty-runtime.txt
+            build/m2_10-pce/media-runtime.txt
+            build/m2_10-pce/runtime.txt
+            build/m2_10-pce/test-disk.img
           if-no-files-found: warn
