@@ -121,7 +121,7 @@ _m2_12_wait_keyboard:
         move.l  #0x00000420,%a0
         move.l  #0x494e3132,(%a0)       /* IN12 */
 
-        /* IWM media sense bank 8. */
+        /* IWM media sense bank 8. Preserve original VIA DDRA in D6. */
         move.l  #0x00efe600,%a0
         move.b  (%a0),%d6
         move.b  %d6,%d0
@@ -163,9 +163,11 @@ _m2_12_wait_keyboard:
         move.b  0x00c01801,%d0         /* Q6 low */
         move.b  0x00c01c01,%d0         /* Q7 low */
 
-        /* Locate a data address mark D5 AA AD within a bounded raw stream. */
+        /* Locate a data address mark D5 AA AD within a bounded raw stream.
+         * D6 must remain untouched so the original VIA DDRA can be restored.
+         */
         moveq   #0,%d3
-        move.l  #12000,%d6
+        move.l  #12000,%d4
 _m2_12_find_dam:
         bsr.w   _m2_12_get_iwm_byte
         tst.l   %d0
@@ -175,7 +177,7 @@ _m2_12_find_dam:
         andi.l  #0x00ffffff,%d3
         cmpi.l  #0x00d5aaad,%d3
         beq.s   _m2_12_dam_found
-        subq.l  #1,%d6
+        subq.l  #1,%d4
         bne.w   _m2_12_find_dam
         bra.w   _m2_12_read_fail
 
