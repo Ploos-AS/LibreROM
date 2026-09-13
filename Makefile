@@ -30,7 +30,12 @@ M2_7_ELF := $(BUILD)/librom-m2.7-macplus.elf
 M2_7_ROM := $(BUILD)/librom-m2.7-macplus.bin
 M2_7_MAP := $(BUILD)/librom-m2.7-macplus.map
 
-.PHONY: all check check-m2 check-m2_1 check-m2_2 check-m2_3 check-m2_4 check-m2_5 check-m2_6 check-m2_7 qualify-m1 qualify-m1-runtime qualify-m2_1 qualify-m2_2 qualify-m2_3 qualify-m2_4 qualify-m2_5 qualify-m2_6 qualify-m2_7 clean
+M2_8_OBJ := $(BUILD)/m2_8-reset.o
+M2_8_ELF := $(BUILD)/librom-m2.8-macplus.elf
+M2_8_ROM := $(BUILD)/librom-m2.8-macplus.bin
+M2_8_MAP := $(BUILD)/librom-m2.8-macplus.map
+
+.PHONY: all check check-m2 check-m2_1 check-m2_2 check-m2_3 check-m2_4 check-m2_5 check-m2_6 check-m2_7 check-m2_8 qualify-m1 qualify-m1-runtime qualify-m2_1 qualify-m2_2 qualify-m2_3 qualify-m2_4 qualify-m2_5 qualify-m2_6 qualify-m2_7 qualify-m2_8 clean
 
 all: $(ROM)
 
@@ -87,6 +92,16 @@ $(M2_7_ROM): $(M2_7_ELF)
 	$(OBJCOPY) -O binary --gap-fill=0xff $< $@
 	$(PYTHON) scripts/pad_rom.py $@ 131072
 
+$(M2_8_OBJ): src/platform/macplus/reset_m2_8.S | $(BUILD)
+	$(AS) -m68000 -o $@ $<
+
+$(M2_8_ELF): $(M2_8_OBJ) linker/m2_8.ld
+	$(LD) -T linker/m2_8.ld -Map=$(M2_8_MAP) -o $@ $(M2_8_OBJ)
+
+$(M2_8_ROM): $(M2_8_ELF)
+	$(OBJCOPY) -O binary --gap-fill=0xff $< $@
+	$(PYTHON) scripts/pad_rom.py $@ 131072
+
 check:
 	$(PYTHON) scripts/check_m0.py
 	$(PYTHON) scripts/check_m1.py
@@ -98,6 +113,7 @@ check:
 	$(PYTHON) scripts/check_m2_5.py
 	$(PYTHON) scripts/check_m2_6.py
 	$(PYTHON) scripts/check_m2_7.py
+	$(PYTHON) scripts/check_m2_8.py
 
 check-m2:
 	$(PYTHON) scripts/check_m2.py
@@ -122,6 +138,9 @@ check-m2_6:
 
 check-m2_7:
 	$(PYTHON) scripts/check_m2_7.py
+
+check-m2_8:
+	$(PYTHON) scripts/check_m2_8.py
 
 qualify-m1: $(ROM)
 	$(PYTHON) scripts/qualify_m1.py $(ROM)
@@ -158,6 +177,11 @@ qualify-m2_7: $(M2_7_ROM) $(M2_7_ELF)
 	$(PYTHON) scripts/check_m2_7.py
 	bash scripts/qualify_m2_7_runtime.sh $(M2_7_ROM)
 	CROSS=$(CROSS) bash scripts/qualify_m2_7_pce.sh $(M2_7_ROM) $(M2_7_ELF)
+
+qualify-m2_8: $(M2_8_ROM) $(M2_8_ELF)
+	$(PYTHON) scripts/check_m2_8.py
+	bash scripts/qualify_m2_8_runtime.sh $(M2_8_ROM)
+	CROSS=$(CROSS) bash scripts/qualify_m2_8_pce.sh $(M2_8_ROM) $(M2_8_ELF)
 
 clean:
 	rm -rf $(BUILD)
