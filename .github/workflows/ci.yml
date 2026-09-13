@@ -36,6 +36,9 @@ jobs:
       - name: Qualify M2.7 framebuffer diagnostic
         run: make CROSS=m68k-linux-gnu- qualify-m2_7
 
+      - name: Qualify M2.8 VIA Timer 1 interrupt path
+        run: make CROSS=m68k-linux-gnu- qualify-m2_8
+
       - name: Upload runtime evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -63,4 +66,9 @@ jobs:
             build/m2_7-runtime/runtime.txt
             build/m2_7-pce/libre-rom-mac-plus.cfg
             build/m2_7-pce/runtime.txt
+            build/librom-m2.8-macplus.bin
+            build/librom-m2.8-macplus.map
+            build/m2_8-runtime/runtime.txt
+            build/m2_8-pce/libre-rom-mac-plus.cfg
+            build/m2_8-pce/runtime.txt
           if-no-files-found: warn
