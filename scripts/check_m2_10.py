@@ -9,6 +9,8 @@ doc = (root / "docs/M2_10_IWM_QUALIFICATION.md").read_text()
 
 required_src = [
     "LIBREROM-M2.10-MACPLUS-IWM-SENSE",
+    "0x00efe600",
+    "ori.b   #0x20,%d0               /* A5 = output */",
     "0x00c00001",
     "0x00c00401",
     "0x00c00801",
