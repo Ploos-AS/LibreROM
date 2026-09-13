@@ -77,6 +77,10 @@ EOF
 {
     printf 'g b %X\n' "$STOP_ADDR"
     printf 'd 420 30\n'
+    printf 'd 800 30\n'
+    printf 'd A00 10\n'
+    printf 'd 1000 30\n'
+    printf 'd 1200 10\n'
     printf 'd 2000 40\n'
     printf 's cpu via\n'
     printf 'q\n'
