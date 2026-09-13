@@ -72,8 +72,9 @@ sony {
 EOF
 
 {
-    printf 'g b 0x%X\n' "$STOP_ADDR"
-    printf 'd 0x400 8\n'
+    # PCE monitor numeric constants are hexadecimal without a 0x prefix.
+    printf 'g b %X\n' "$STOP_ADDR"
+    printf 'd 400 8\n'
     printf 's cpu via\n'
     printf 'm emu.exit\n'
 } | timeout 30 "$SRC/src/arch/macplus/pce-macplus" -q -c "$CFG" -t null >"$TRANSCRIPT" 2>&1 || {
