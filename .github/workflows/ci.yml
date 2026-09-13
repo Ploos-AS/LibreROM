@@ -39,6 +39,9 @@ jobs:
       - name: Qualify M2.8 VIA Timer 1 interrupt path
         run: make CROSS=m68k-linux-gnu- qualify-m2_8
 
+      - name: Qualify M2.9 keyboard VIA shift-register path
+        run: make CROSS=m68k-linux-gnu- qualify-m2_9
+
       - name: Upload runtime evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -71,4 +74,9 @@ jobs:
             build/m2_8-runtime/runtime.txt
             build/m2_8-pce/libre-rom-mac-plus.cfg
             build/m2_8-pce/runtime.txt
+            build/librom-m2.9-macplus.bin
+            build/librom-m2.9-macplus.map
+            build/m2_9-runtime/runtime.txt
+            build/m2_9-pce/libre-rom-mac-plus.cfg
+            build/m2_9-pce/runtime.txt
           if-no-files-found: warn
