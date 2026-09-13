@@ -78,13 +78,13 @@ _m2_6_ram_fail_alt:
         move.l  #0x00600400,%a0
         move.l  #0x52414636,(%a0)       /* "RAF6" */
         stop    #0x2700
-        bra.s   _m2_6_ram_fail_alt
+        bra.w   _m2_6_ram_fail_alt
 
 _m2_6_ram_fail_low:
         move.l  #0x00000400,%a0
         move.l  #0x52414d36,(%a0)       /* "RAM6" */
         stop    #0x2700
-        bra.s   _m2_6_ram_fail_low
+        bra.w   _m2_6_ram_fail_low
 
         .globl _m2_6_default
 _m2_6_default:
@@ -94,7 +94,7 @@ _m2_6_default:
         .globl _m2_6_stop
 _m2_6_stop:
         stop    #0x2700
-        bra.s   _m2_6_stop
+        bra.w   _m2_6_stop
 
         .section .rodata,"a"
         .balign 4
