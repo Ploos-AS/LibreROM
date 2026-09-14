@@ -2,35 +2,32 @@ OUTPUT_FORMAT("elf32-m68k")
 OUTPUT_ARCH(m68k)
 ENTRY(_m3_0_reset)
 
+/* M3.0 is a deliberately machine-neutral core-service qualification ROM.
+ * Platform integration remains covered by the cumulative M2 Mac Plus path.
+ */
 MEMORY
 {
-  ROM (rx) : ORIGIN = 0x00400000, LENGTH = 128K
+    ROM (rx) : ORIGIN = 0x00000000, LENGTH = 64K
 }
 
 SECTIONS
 {
-  . = ORIGIN(ROM);
-  .vectors :
-  {
-    KEEP(*(.vectors))
-  } > ROM
-  ASSERT(SIZEOF(.vectors) == 8, "M3.0 reset vector table must be exactly 8 bytes")
+    .vectors 0x00000000 :
+    {
+        KEEP(*(.vectors))
+    } > ROM
 
-  .text :
-  {
-    *(.text*)
-  } > ROM
+    .text :
+    {
+        *(.text*)
+        *(.rodata*)
+    } > ROM
 
-  .rodata :
-  {
-    *(.rodata*)
-  } > ROM
+    /DISCARD/ :
+    {
+        *(.comment*)
+        *(.note*)
+    }
 
-  /DISCARD/ :
-  {
-    *(.comment*)
-    *(.note*)
-  }
-
-  ASSERT(. <= ORIGIN(ROM) + LENGTH(ROM), "M3.0 ROM exceeds 128 KiB")
+    ASSERT(. <= ORIGIN(ROM) + LENGTH(ROM), "M3.0 ROM exceeds 64 KiB")
 }
