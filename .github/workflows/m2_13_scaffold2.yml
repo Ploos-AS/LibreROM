@@ -18,6 +18,7 @@ jobs:
           fetch-depth: 0
       - name: Scaffold and commit M2.13
         run: |
+          # rerun after correcting the M2.12 documentation source path
           python3 tools/scaffold_m2_13.py
           git checkout -- .github/workflows/ci.yml
           git config user.name "github-actions[bot]"
