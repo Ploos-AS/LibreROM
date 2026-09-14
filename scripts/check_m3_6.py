@@ -5,8 +5,10 @@ checks = {
     "src/platform/macplus/reset_m3_6.S": (
         "MAC_TRAP_SET_PTR_SIZE, 0xa020",
         "MAC_TRAP_GET_PTR_SIZE, 0xa021",
-        "MAC_MEM_WZ_ERR,      -111",
-        "MAC_MEM_FULL_ERR,    -108",
+        "MAC_MEM_WZ_ERR",
+        "-111",
+        "MAC_MEM_FULL_ERR",
+        "-108",
         "LIBREROM-M3.6-PTRSIZE-COMPAT",
     ),
     "linker/m3_6.ld": (
