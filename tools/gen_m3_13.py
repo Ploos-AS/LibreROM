@@ -19,8 +19,9 @@ end_marker = "        move.l #0x4f4b3132,0x00000424      /* OK12 */"
 end = src.index(end_marker, start) + len(end_marker)
 new_test = '''        move.l #0x4d333133,0x00000400      /* M313 */
 
-        /* Stable ordinary handle at the bottom of the heap. */
-        move.l #0x20,%d0
+        /* Stable lower handle occupies most of the heap. It is already at the
+           compaction cursor, so a correct pass must leave it untouched. */
+        move.l #0x0006ff80,%d0
         .word MAC_TRAP_NEW_HANDLE
         tst.w %d0
         bne.w _m3_13_fail
@@ -40,14 +41,14 @@ new_test = '''        move.l #0x4d333133,0x00000400      /* M313 */
         tst.w %d0
         bne.w _m3_13_fail
 
-        /* A large relocatable handle fills the heap above that hole. */
-        move.l #0x0006ffc0,%d0
+        /* A small relocatable tail handle fills the heap above that hole. */
+        move.l #0x60,%d0
         .word MAC_TRAP_NEW_HANDLE
         tst.w %d0
         bne.w _m3_13_fail
         move.l %a0,LR_TEST_PTR
         move.l (%a0),%a1
-        cmpa.l #0x00010040,%a1
+        cmpa.l #0x0007ffa0,%a1
         bne.w _m3_13_fail
         move.l #0x4d563133,(%a1)           /* MV13 */
         move.l #0x544c3133,0x0007fffc      /* TL13 */
@@ -87,7 +88,7 @@ new_test = '''        move.l #0x4d333133,0x00000400      /* M313 */
         /* The moved handle keeps its master pointer, payload and full extent. */
         move.l LR_TEST_PTR,%a0
         move.l (%a0),%a1
-        cmpa.l #0x00010020,%a1
+        cmpa.l #0x0007ff80,%a1
         bne.w _m3_13_fail
         cmpi.l #0x4d563133,(%a1)
         bne.w _m3_13_fail
