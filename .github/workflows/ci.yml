@@ -69,6 +69,9 @@ jobs:
       - name: Qualify M3.4 documented NewPtr compatibility
         run: CROSS=m68k-linux-gnu- bash scripts/qualify_m3_4.sh
 
+      - name: Qualify M3.5 documented DisposePtr compatibility
+        run: CROSS=m68k-linux-gnu- bash scripts/qualify_m3_5.sh
+
       - name: Upload runtime evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -149,4 +152,7 @@ jobs:
             build/librom-m3.4-macplus.bin
             build/librom-m3.4-macplus.map
             build/m3_4-runtime/runtime.txt
+            build/librom-m3.5-macplus.bin
+            build/librom-m3.5-macplus.map
+            build/m3_5-runtime/runtime.txt
           if-no-files-found: warn
