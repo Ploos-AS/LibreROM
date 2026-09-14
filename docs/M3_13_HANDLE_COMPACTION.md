@@ -20,16 +20,18 @@ The first compaction slice:
 
 The deterministic Musashi gate proves that:
 
-1. a stable lower Handle remains live;
-2. disposing a middle Handle creates a real hole;
-3. a large Handle can fill the remaining heap above the hole;
-4. while that large Handle is locked, an allocation that requires compaction fails with `memFullErr` and the heap remains unchanged;
+1. a stable lower Handle occupies the already-compacted lower heap and remains live;
+2. disposing a middle `0x20` Handle creates a real hole;
+3. a relocatable `0x60` tail Handle fills the heap above that hole;
+4. while that tail Handle is locked, an allocation that requires compaction fails with `memFullErr` and the heap remains unchanged;
 5. after `HUnlock`, the same allocation triggers compaction;
-6. the large Handle moves from `0x00010040` to `0x00010020`;
+6. the tail Handle moves from `0x0007ffa0` to `0x0007ff80`;
 7. its master pointer follows the relocated data;
 8. both head and tail payload sentinels survive the overlapping downward move;
 9. the new allocation occupies the recovered tail at `0x0007ffe0` and ends exactly at `LR_HEAP_LIMIT`;
 10. the stable lower Handle retains both its original address and payload.
+
+The fixture deliberately keeps the block being relocated small. The earlier fixture moved almost the entire heap byte-by-byte, so the Musashi cycle budget expired while a correct compaction copy was still in progress. That tested emulator throughput rather than the compaction contract. The revised fixture exercises the same fragmentation, lock-barrier, relocation, master-pointer and payload-preservation semantics within a deterministic runtime bound.
 
 ## Deliberate limits
 
