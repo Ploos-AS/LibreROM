@@ -8,7 +8,7 @@ COPIES = {
     'scripts/check_m2_12.py': 'scripts/check_m2_13.py',
     'scripts/qualify_m2_12.sh': 'scripts/qualify_m2_13.sh',
     'scripts/qualify_m2_12_pce.sh': 'scripts/qualify_m2_13_pce.sh',
-    'docs/M2_12_GCR_SECTOR_QUALIFICATION.md': 'docs/M2_13_BOOT_TRANSFER_QUALIFICATION.md',
+    'docs/M2_12_GCR_SECTOR_LOADER.md': 'docs/M2_13_BOOT_TRANSFER_QUALIFICATION.md',
 }
 for src, dst in COPIES.items():
     shutil.copyfile(src, dst)
