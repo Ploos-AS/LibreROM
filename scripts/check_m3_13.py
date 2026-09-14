@@ -11,7 +11,7 @@ required = [
     '_m3_13_make_room', '_m3_13_compact_handles', '_m3_13_reclaim_purgeable_tail',
     'MAC_TRAP_DISPOSE_HANDLE', 'MAC_TRAP_HLOCK', 'MAC_TRAP_HUNLOCK',
     'MAC_MEM_FULL_ERR', 'LR_HSTATE_LOCK', 'LIBREROM-M3.13-HANDLE-COMPACTION',
-    '0x0006ffc0', '0x0007ffe0', '0x00010020', '0x4f4b3133'
+    '0x0006ff80', '0x0007ffa0', '0x0007ff80', '0x0007ffe0', '0x4f4b3133'
 ]
 missing = [x for x in required if x not in src]
 if missing:
