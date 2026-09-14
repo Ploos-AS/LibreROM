@@ -88,17 +88,9 @@ new_test = '''        move.l #0x4d333131,0x00000400      /* M311 */
         move.l #0x4f4b3131,0x00000424      /* OK11 */'''
 src = src[:start] + new_test + src[end:]
 
-old = '''        move.l LR_HEAP_NEXT,%d2
-        move.l %d2,%d6
-        add.l %d1,%d6
-        cmpi.l #LR_HEAP_LIMIT,%d6
-        bhi.w _m3_11_handle_alloc_fail
+needle = '''        bhi.w _m3_11_handle_alloc_fail
         move.l %d6,LR_HEAP_NEXT'''
-new = '''        move.l LR_HEAP_NEXT,%d2
-        move.l %d2,%d6
-        add.l %d1,%d6
-        cmpi.l #LR_HEAP_LIMIT,%d6
-        bls.s 41f
+replacement = '''        bls.s 41f
         move.l %a1,%a5
         move.l %a2,%a6
         bsr.w _m3_11_reclaim_purgeable_tail
@@ -112,9 +104,11 @@ new = '''        move.l LR_HEAP_NEXT,%d2
         cmpi.l #LR_HEAP_LIMIT,%d6
         bhi.w _m3_11_handle_alloc_fail
 41:     move.l %d6,LR_HEAP_NEXT'''
-if old not in src:
-    raise SystemExit("generator contract changed: NewHandle capacity block not found")
-src = src.replace(old, new, 1)
+new_handle = src.index("_m3_11_new_handle:")
+needle_at = src.find(needle, new_handle)
+if needle_at < 0:
+    raise SystemExit("generator contract changed: NewHandle pressure branch not found")
+src = src[:needle_at] + replacement + src[needle_at + len(needle):]
 
 insert_at = src.index("_m3_11_handle_alloc_fail:")
 helper = '''/* Reclaim only an unlocked purgeable block exactly at the heap tail.
