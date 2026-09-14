@@ -20,7 +20,7 @@ jobs:
         run: python3 scripts/check_model_variants.py
 
       - name: Qualify current Macintosh Plus source milestone
-        run: CROSS=m68k-linux-gnu- bash scripts/qualify_m3_6.sh
+        run: CROSS=m68k-linux-gnu- bash scripts/qualify_m3_7.sh
 
       - name: Package persistent Macintosh Plus variant
         run: python3 scripts/package_model_variant.py profiles/macplus.json
@@ -32,7 +32,7 @@ jobs:
           test -s build/variants/macplus/librerom-macplus.map
           test -s build/variants/macplus/manifest.json
           grep -q '"model_id": "macplus"' build/variants/macplus/manifest.json
-          grep -q '"source_milestone": "m3.6"' build/variants/macplus/manifest.json
+          grep -q '"source_milestone": "m3.7"' build/variants/macplus/manifest.json
 
       - name: Upload Macintosh Plus LibreROM variant
         uses: actions/upload-artifact@v4
