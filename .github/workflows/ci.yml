@@ -87,6 +87,9 @@ jobs:
       - name: Qualify M3.10 cumulative memory state
         run: CROSS=m68k-linux-gnu- bash scripts/qualify_m3_10.sh
 
+      - name: Qualify M3.11 purge reclaim under memory pressure
+        run: CROSS=m68k-linux-gnu- bash scripts/qualify_m3_11.sh
+
       - name: Upload runtime evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -185,4 +188,7 @@ jobs:
             build/librom-m3.10-macplus.bin
             build/librom-m3.10-macplus.map
             build/m3_10-runtime/runtime.txt
+            build/librom-m3.11-macplus.bin
+            build/librom-m3.11-macplus.map
+            build/m3_11-runtime/runtime.txt
           if-no-files-found: warn
