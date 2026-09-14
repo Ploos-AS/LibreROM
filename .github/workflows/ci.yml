@@ -63,6 +63,9 @@ jobs:
       - name: Qualify M3.2 memory primitive
         run: CROSS=m68k-linux-gnu- bash scripts/qualify_m3_2.sh
 
+      - name: Qualify M3.3 pointer/status services
+        run: CROSS=m68k-linux-gnu- bash scripts/qualify_m3_3.sh
+
       - name: Upload runtime evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -137,4 +140,7 @@ jobs:
             build/librom-m3.2-macplus.bin
             build/librom-m3.2-macplus.map
             build/m3_2-runtime/runtime.txt
+            build/librom-m3.3-macplus.bin
+            build/librom-m3.3-macplus.map
+            build/m3_3-runtime/runtime.txt
           if-no-files-found: warn
