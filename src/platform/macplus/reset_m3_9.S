@@ -63,9 +63,8 @@ _m3_9_reset:
         moveq #7,%d0
 3:      clr.l (%a0)+
         dbra %d0,3b
-        move.l #0x4d333930,0x400              /* M390 */
+        move.l #0x4d333930,0x400
 
-        /* Two handles ensure h1 cannot grow in place. */
         move.l #0x20,%d0
         .word MAC_TRAP_NEW_HANDLE
         tst.w %d0
@@ -73,13 +72,12 @@ _m3_9_reset:
         move.l %a0,LR_TEST_HANDLE
         move.l (%a0),LR_TEST_OLD_DATA
         move.l (%a0),%a1
-        move.l #0x48393941,(%a1)              /* H99A */
+        move.l #0x48393941,(%a1)
         move.l #0x20,%d0
         .word MAC_TRAP_NEW_HANDLE
         tst.w %d0
         bne.w _m3_9_fail
 
-        /* HLock sets bit 7 and HGetState reports it. */
         move.l LR_TEST_HANDLE,%a0
         .word MAC_TRAP_HLOCK
         tst.w %d0
@@ -88,9 +86,8 @@ _m3_9_reset:
         .word MAC_TRAP_HGETSTATE
         cmpi.b #LR_HSTATE_LOCK,%d0
         bne.w _m3_9_fail
-        move.l #0x4c4b394f,0x404              /* LK9O */
+        move.l #0x4c4b394f,0x404
 
-        /* Locked non-tail handle cannot relocate to satisfy growth. */
         move.l LR_TEST_HANDLE,%a0
         move.l #0x40,%d0
         .word MAC_TRAP_SET_HANDLE_SIZE
@@ -100,9 +97,8 @@ _m3_9_reset:
         move.l (%a0),%d1
         cmp.l LR_TEST_OLD_DATA,%d1
         bne.w _m3_9_fail
-        move.l #0x4c46394f,0x40c              /* LF9O */
+        move.l #0x4c46394f,0x40c
 
-        /* Unlock clears state; relocation can then proceed. */
         move.l LR_TEST_HANDLE,%a0
         .word MAC_TRAP_HUNLOCK
         tst.w %d0
@@ -122,11 +118,10 @@ _m3_9_reset:
         beq.w _m3_9_fail
         cmpi.l #0x48393941,(%a1)
         bne.w _m3_9_fail
-        move.l #0x554c394f,0x410              /* UL9O */
+        move.l #0x554c394f,0x410
 
-        /* HSetState restores lock bit, then HGetState returns it. */
         move.l LR_TEST_HANDLE,%a0
-        moveq #LR_HSTATE_LOCK,%d0
+        move.l #LR_HSTATE_LOCK,%d0
         .word MAC_TRAP_HSETSTATE
         tst.w %d0
         bne.w _m3_9_fail
@@ -134,9 +129,8 @@ _m3_9_reset:
         .word MAC_TRAP_HGETSTATE
         cmpi.b #LR_HSTATE_LOCK,%d0
         bne.w _m3_9_fail
-        move.l #0x5354394f,0x414              /* ST9O */
+        move.l #0x5354394f,0x414
 
-        /* Empty master pointer reports nilHandleErr. */
         move.l LR_TEST_HANDLE,%a0
         clr.l (%a0)
         .word MAC_TRAP_HLOCK
@@ -144,9 +138,9 @@ _m3_9_reset:
         bne.w _m3_9_fail
         cmpi.w #MAC_NIL_HANDLE_ERR,MAC_MEM_ERR
         bne.w _m3_9_fail
-        move.l #0x4e49394f,0x418              /* NI9O */
+        move.l #0x4e49394f,0x418
 
-        move.l #0x4f4b3339,0x41c              /* OK39 */
+        move.l #0x4f4b3339,0x41c
 _m3_9_stop:
         stop #0x2700
         bra.w _m3_9_stop
