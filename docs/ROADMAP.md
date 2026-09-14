@@ -2,10 +2,24 @@
 
 LibreROM is developed in two deliberate phases:
 
-1. **Macintosh first** — implement and qualify a free clean-room ROM/runtime across representative classic 68k Macintosh families.
+1. **Macintosh first** — implement and qualify a free clean-room ROM/runtime across a broad set of classic 68k Macintosh models.
 2. **Alternative 68k hosts later** — after the Macintosh compatibility foundation converges, explore native execution of compatible Macintosh 68k software on other Motorola 68k platforms such as Amiga and Atari.
 
 The alternative-host work is therefore a later portability/compatibility track, not a shortcut around Macintosh hardware and Toolbox compatibility.
+
+## Macintosh coverage policy
+
+LibreROM is not limited to one representative machine per CPU generation. The Macintosh phase aims to cover a substantial part of the 68k Macintosh family while preserving every qualified model as an independent build target.
+
+Coverage priorities are:
+
+1. establish the early compact-Mac baseline;
+2. cover the important Macintosh II and 68030 transition machines;
+3. pursue **near-comprehensive coverage of the high-performance 68030 and 68040 desktop/workstation models** where clean-room documentation and emulator qualification are practical;
+4. cover representative LC/Performa and portable systems sufficiently to exercise their distinct platform behavior;
+5. converge the retained variants into one shared LibreROM Macintosh platform family without collapsing model-specific behavior.
+
+The high-performance track is intentionally broader than a representative sample. Machines such as SE/30, IIci, IIfx and the major Quadra systems are first-class targets, and additional high-end models should be added rather than omitted merely because another machine shares the same CPU generation.
 
 ## Permanent per-model variant policy
 
@@ -13,7 +27,7 @@ LibreROM keeps distinct, buildable ROM variants for the Macintosh models it qual
 
 Each supported Mac model must retain a dedicated machine profile, model-specific ROM artifact, documented compatibility boundary and regression qualification. Generic Toolbox/runtime code may be shared, while hardware-visible differences remain in model backends. Long-term releases therefore contain a family of LibreROM images rather than one universal ROM.
 
-The current Macintosh Plus work becomes the first retained model variant. As Macintosh 128K/512K, SE, Classic, II-family, SE/30, LC and Quadra targets are introduced, their variants remain available and are tested alongside later machines.
+The current Macintosh Plus work becomes the first retained model variant. As Macintosh 128K/512K, SE, Classic, II-family, SE/30, LC, Centris and Quadra targets are introduced, their variants remain available and are tested alongside later machines.
 
 See `docs/MAC_MODEL_VARIANTS.md` for the model matrix, naming policy and source-layout direction.
 
@@ -59,20 +73,21 @@ The first concrete machine profile should remain conservative and 68000-based. T
 
 ## M5 — Early compact Macintosh family
 
-Goal: establish a qualified baseline for early 68000 compact Macintosh systems while preserving each qualified model as a separate LibreROM variant.
+Goal: establish a qualified baseline for early compact Macintosh systems while preserving each qualified model as a separate LibreROM variant.
 
-Representative targets:
+Primary targets:
 
 - Macintosh 128K
-- Macintosh 512K
+- Macintosh 512K / 512Ke
 - Macintosh Plus
 - Macintosh SE
-- Macintosh Classic-class systems where architecture overlaps sufficiently
+- Macintosh Classic
+- Macintosh Classic II where its 68030 platform behavior fits the transition into later milestones
 
 Planned scope:
 
 - dedicated machine profile and ROM artifact for every qualified model
-- 68000 execution
+- 68000 execution for the early machines
 - low-memory/global environment required by compatible software
 - VIA/input/timer behavior
 - framebuffer/QuickDraw path
@@ -83,48 +98,85 @@ Planned scope:
 
 Compatibility claims remain machine-profile-specific.
 
-## M6 — Macintosh II family
+## M6 — Macintosh II and 68030 performance family
 
-Goal: expand LibreROM into modular/color 68k Macintosh systems without replacing the compact-Mac ROM variants.
+Goal: expand LibreROM into modular/color Macintosh systems and establish a broad 68020/68030 desktop baseline, with especially strong coverage of performance-oriented machines.
 
-Representative targets:
+Primary targets include:
 
 - Macintosh II
 - Macintosh IIx
 - Macintosh IIcx
-- Macintosh IIci as a major 68030 convergence target
+- Macintosh IIci
+- Macintosh IIsi
+- Macintosh IIfx
+- Macintosh SE/30
 
-Planned scope:
-
-- dedicated retained variant for each qualified II-family model
-- 68020/68030 execution profiles
-- Slot Manager / expansion-facing behavior where required
-- color QuickDraw progression
-- broader memory-management behavior
-- machine-specific interrupt, video and storage support
-- regression against every retained compact-Mac baseline
-
-## M7 — 68030/68040 Macintosh expansion
-
-Goal: broaden compatibility toward later classic 68k Macintosh hardware while keeping earlier model ROMs buildable and qualified.
-
-Representative targets may include:
-
-- later II-family systems
-- SE/30
-- concrete LC models
-- concrete Quadra 68040 models
+Additional II-family 68k models should be added when they expose distinct hardware behavior and can be qualified cleanly.
 
 Planned scope:
 
 - dedicated retained variant for each qualified model
-- 68030/68040-specific startup and exception behavior
-- MMU/cache/FPU-aware qualification where relevant
+- 68020/68030 execution profiles
+- 68881/68882/FPU-aware qualification where relevant
+- MMU/cache behavior where relevant
+- Slot Manager / NuBus-facing behavior
+- color QuickDraw progression
+- broader memory-management behavior
+- machine-specific interrupt, video and storage support
+- high-performance timing/controller differences where software-visible
+- regression against every retained compact-Mac baseline
+
+The IIfx, IIci and SE/30 are not interchangeable representatives; each is intended to remain an explicit supported target.
+
+## M7 — High-performance 68040 Macintosh expansion
+
+Goal: build broad coverage of the 68040 desktop/workstation generation, with a policy of attempting all important high-performance models rather than selecting only one representative Quadra.
+
+Priority high-performance targets include:
+
+- Quadra 700
+- Quadra 900
+- Quadra 950
+- Quadra 610
+- Quadra 650
+- Quadra 800
+- Quadra 840AV
+- Centris 610
+- Centris 650
+- other 68k Quadra/Centris models where hardware differences warrant a retained variant
+
+Planned scope:
+
+- dedicated retained variant for each qualified model
+- 68040-specific startup and exception behavior
+- MMU/cache/FPU-aware qualification
+- machine-specific memory controllers and interrupt plumbing
+- NuBus/PDS-facing behavior where applicable
 - additional video/storage/platform controllers
-- broader Toolbox and ROM service coverage
+- broader Toolbox, Color QuickDraw and ROM service coverage
+- AV-specific research for models such as Quadra 840AV without making unsupported compatibility claims
 - regression across all earlier retained machine profiles
 
-Family names such as `LC` or `Quadra` may be used during research, but qualification must ultimately identify concrete machine models. Exact machine ordering may be refined according to documentation quality and clean-room feasibility.
+For this high-performance group, the default policy is **include unless there is a concrete clean-room, documentation or emulator limitation**, rather than selecting a small representative subset.
+
+## M7B — LC, Performa and portable breadth
+
+Goal: add enough lower-cost desktop and portable coverage to exercise materially different 68k Macintosh platform designs without requiring every marketing variant to become a separate target when hardware is effectively identical.
+
+Candidate groups include:
+
+- concrete Macintosh LC models
+- selected Performa variants where hardware differs materially from an already-supported LC/desktop model
+- Macintosh Portable
+- representative 68k PowerBook models
+
+Planned scope:
+
+- split family names into concrete machine profiles before qualification
+- prioritize hardware-distinct variants over rebadged configurations
+- qualify portable power-management/input/storage differences where practical
+- preserve every model once promoted to qualified status
 
 ## M8 — Macintosh 68k family convergence
 
@@ -134,7 +186,8 @@ Exit criteria:
 
 - shared machine/profile schema
 - separately buildable ROM artifact for every retained qualified Macintosh model
-- representative 68000, 68020/68030 and 68040 profiles
+- broad 68000, 68020, 68030 and 68040 profile coverage
+- near-comprehensive retained coverage of qualified high-performance 68030/68040 targets
 - common ROM/Toolbox behavioral regression suite
 - documented A-trap coverage matrix
 - QuickDraw compatibility baseline
@@ -231,7 +284,7 @@ The later alternative-host work explores a broader idea: whether classic Macinto
 
 The intended ordering is:
 
-**early compact Macintosh → Macintosh II family → later 68030/68040 Macs → Macintosh family convergence → portable LibreROM runtime → Amiga → Atari.**
+**early compact Macintosh → broad Macintosh II/68030 coverage → high-performance 68040 coverage → LC/Performa/portable breadth → Macintosh family convergence → portable LibreROM runtime → Amiga → Atari.**
 
 Throughout that progression, every qualified Macintosh model remains a preserved LibreROM build target.
 
