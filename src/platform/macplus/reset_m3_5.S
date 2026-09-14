@@ -22,6 +22,8 @@
         .equ    LR_HEAP_BASE,         0x00010000
         .equ    LR_HEAP_LIMIT,        0x00080000
         .equ    LR_HEAP_NEXT,         0x00000440
+        .equ    LR_TEST_P1,           0x00000430
+        .equ    LR_TEST_P2,           0x00000434
         .equ    LR_ALLOC_TABLE,       0x00000460
         .equ    LR_ALLOC_COUNT,       8
         .equ    LR_ALLOC_REC_SIZE,    12
@@ -79,6 +81,8 @@ _m3_5_reset:
         move.l  #0x000f0000,%a7
         move.l  #LR_HEAP_BASE,LR_HEAP_NEXT
         clr.w   MAC_MEM_ERR
+        clr.l   LR_TEST_P1
+        clr.l   LR_TEST_P2
 
         /* Clear allocation table. */
         move.l  #LR_ALLOC_TABLE,%a0
@@ -89,14 +93,16 @@ _m3_5_reset:
 
         move.l  #0x4d333530,0x00000400  /* M350 */
 
-        /* Two baseline allocations. */
+        /* Two baseline allocations. Store test pointers in RAM because A1/A2
+         * are not part of the public trap result contract and may be clobbered
+         * by the dispatcher/implementation. */
         move.l  #0x20,%d0
         .word   MAC_TRAP_NEW_PTR
         tst.w   %d0
         bne.w   _m3_5_service_fail
         cmpa.l  #0x00010000,%a0
         bne.w   _m3_5_service_fail
-        move.l  %a0,%a1               /* save p1 */
+        move.l  %a0,LR_TEST_P1
 
         move.l  #0x12,%d0
         .word   MAC_TRAP_NEW_PTR
@@ -104,11 +110,11 @@ _m3_5_reset:
         bne.w   _m3_5_service_fail
         cmpa.l  #0x00010020,%a0
         bne.w   _m3_5_service_fail
-        move.l  %a0,%a2               /* save p2 */
+        move.l  %a0,LR_TEST_P2
         move.l  #0x4e50354f,0x00000404 /* NP5O */
 
         /* Dispose p1; documented result is A0=0, D0.W=noErr, MemErr=noErr. */
-        move.l  %a1,%a0
+        move.l  LR_TEST_P1,%a0
         .word   MAC_TRAP_DISPOSE_PTR
         tst.w   %d0
         bne.w   _m3_5_service_fail
@@ -130,11 +136,11 @@ _m3_5_reset:
         move.l  #0x52555335,0x00000410 /* RUS5 */
 
         /* Dispose p2, then dispose p2 again: second call must be memWZErr. */
-        move.l  %a2,%a0
+        move.l  LR_TEST_P2,%a0
         .word   MAC_TRAP_DISPOSE_PTR
         tst.w   %d0
         bne.w   _m3_5_service_fail
-        move.l  %a2,%a0
+        move.l  LR_TEST_P2,%a0
         .word   MAC_TRAP_DISPOSE_PTR
         cmpi.w  #MAC_MEM_WZ_ERR,%d0
         bne.w   _m3_5_service_fail
