@@ -93,6 +93,9 @@ jobs:
       - name: Qualify M3.12 locked purge pressure matrix
         run: CROSS=m68k-linux-gnu- bash scripts/qualify_m3_12.sh
 
+      - name: Qualify M3.13 handle compaction under fragmentation
+        run: CROSS=m68k-linux-gnu- bash scripts/qualify_m3_13.sh
+
       - name: Upload runtime evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -197,4 +200,7 @@ jobs:
             build/librom-m3.12-macplus.bin
             build/librom-m3.12-macplus.map
             build/m3_12-runtime/runtime.txt
+            build/librom-m3.13-macplus.bin
+            build/librom-m3.13-macplus.map
+            build/m3_13-runtime/runtime.txt
           if-no-files-found: warn
