@@ -90,8 +90,8 @@ src = src[:start] + new_test + src[end:]
 
 # M3.17 still carries the original M3.10 DisposeHandle body: it clears the
 # master pointer and marks the record inactive, but deliberately retains the
-# data/logical/extent metadata. M3.18 uses that retained metadata to reclaim a
-# physical-tail Handle and repeatedly coalesce inactive Handle predecessors.
+# data/logical/extent metadata. M3.18 keeps that metadata for interior holes so
+# a later tail disposal can discover and coalesce inactive predecessors.
 old = '''_m3_18_dispose_handle:
         bsr.w _m3_18_find_handle
         tst.l %d5
@@ -116,7 +116,7 @@ new = '''_m3_18_dispose_handle:
         clr.l LR_HREC_ACTIVE(%a1)
         clr.l LR_HREC_STATE(%a1)
         cmp.l LR_HEAP_NEXT,%d6
-        bne.s 81f
+        bne.s 85f
         move.l %d2,LR_HEAP_NEXT
         /* Repeatedly absorb an inactive Handle whose retained extent ends
            exactly at the newly exposed physical heap tail. */
@@ -137,10 +137,13 @@ new = '''_m3_18_dispose_handle:
         bra.s 82b
 84:     adda.l #LR_HANDLE_REC_SIZE,%a2
         dbra %d3,83b
-81:     clr.l LR_HREC_DATA(%a1)
+        /* The just-disposed tail record may not have been selected by the
+           predecessor scan because its end was the old heap tail. Clear its
+           retained metadata now that its storage has been reclaimed. */
+        clr.l LR_HREC_DATA(%a1)
         clr.l LR_HREC_LOGICAL(%a1)
         clr.l LR_HREC_EXTENT(%a1)
-        moveq #MAC_NO_ERR,%d0
+85:     moveq #MAC_NO_ERR,%d0
         clr.w MAC_MEM_ERR
 24:     rte
 '''
