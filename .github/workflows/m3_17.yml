@@ -1,0 +1,28 @@
+name: M3.17 Ptr tail coalescing
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  qualify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y binutils-m68k-linux-gnu build-essential git python3 autoconf
+      - name: Qualify M3.17 inactive Ptr tail coalescing
+        run: CROSS=m68k-linux-gnu- bash scripts/qualify_m3_17.sh
+      - name: Upload M3.17 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: librerom-m3.17-evidence
+          path: |
+            build/librom-m3.17-macplus.bin
+            build/librom-m3.17-macplus.map
+            build/m3_17-runtime/runtime.txt
+          if-no-files-found: warn
