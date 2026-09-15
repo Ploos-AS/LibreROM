@@ -184,14 +184,14 @@ compactor = '''_m3_15_compact_handles:
         move.l LR_HREC_HANDLE(%a1),%a2
         move.l %d7,(%a2)
 67:     add.l LR_HREC_EXTENT(%a1),%d7
-        bra.s 57b
+        bra.w 57b
 68:     move.l %d2,%d7
         add.l LR_HREC_EXTENT(%a1),%d7
-        bra.s 57b
+        bra.w 57b
 69:     move.l %a5,%a1
         move.l LR_REC_PTR(%a1),%d7
         add.l LR_REC_EXTENT(%a1),%d7
-        bra.s 57b
+        bra.w 57b
 70:     move.l %d7,LR_HEAP_NEXT
         moveq #0,%d5
         rts
