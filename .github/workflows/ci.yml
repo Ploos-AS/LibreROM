@@ -99,6 +99,9 @@ jobs:
       - name: Qualify M3.14 address-ordered handle compaction
         run: CROSS=m68k-linux-gnu- bash scripts/qualify_m3_14.sh
 
+      - name: Qualify M3.15 mixed Ptr Handle compaction
+        run: CROSS=m68k-linux-gnu- bash scripts/qualify_m3_15.sh
+
       - name: Upload runtime evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -209,4 +212,7 @@ jobs:
             build/librom-m3.14-macplus.bin
             build/librom-m3.14-macplus.map
             build/m3_14-runtime/runtime.txt
+            build/librom-m3.15-macplus.bin
+            build/librom-m3.15-macplus.map
+            build/m3_15-runtime/runtime.txt
           if-no-files-found: warn
