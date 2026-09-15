@@ -88,35 +88,38 @@ new_test = '''        move.l #0x4d333138,0x00000400      /* M318 */
         move.l #0x4f4b3138,0x00000424      /* OK18 */'''
 src = src[:start] + new_test + src[end:]
 
-# Extend DisposeHandle so a disposed physical-tail Handle immediately
-# rewinds the heap and can expose additional inactive Handle predecessors.
+# M3.17 still carries the original M3.10 DisposeHandle body: it clears the
+# master pointer and marks the record inactive, but deliberately retains the
+# data/logical/extent metadata. M3.18 uses that retained metadata to reclaim a
+# physical-tail Handle and repeatedly coalesce inactive Handle predecessors.
 old = '''_m3_18_dispose_handle:
         bsr.w _m3_18_find_handle
         tst.l %d5
-        bne.s 12f
-        clr.l (%a0)
-        clr.l LR_HREC_DATA(%a1)
-        clr.l LR_HREC_LOGICAL(%a1)
-        clr.l LR_HREC_EXTENT(%a1)
+        bne.s 24f
+        move.l LR_HREC_HANDLE(%a1),%a2
+        clr.l (%a2)
         clr.l LR_HREC_ACTIVE(%a1)
         clr.l LR_HREC_STATE(%a1)
         moveq #MAC_NO_ERR,%d0
         clr.w MAC_MEM_ERR
-12:     suba.l %a0,%a0
-        rte
+24:     rte
 '''
 new = '''_m3_18_dispose_handle:
         bsr.w _m3_18_find_handle
         tst.l %d5
-        bne.s 12f
+        bne.w 24f
         move.l LR_HREC_DATA(%a1),%d2
         move.l %d2,%d6
         add.l LR_HREC_EXTENT(%a1),%d6
-        clr.l (%a0)
+        move.l LR_HREC_HANDLE(%a1),%a2
+        clr.l (%a2)
         clr.l LR_HREC_ACTIVE(%a1)
+        clr.l LR_HREC_STATE(%a1)
         cmp.l LR_HEAP_NEXT,%d6
         bne.s 81f
         move.l %d2,LR_HEAP_NEXT
+        /* Repeatedly absorb an inactive Handle whose retained extent ends
+           exactly at the newly exposed physical heap tail. */
 82:     move.l #LR_HANDLE_TABLE,%a2
         moveq #LR_HANDLE_COUNT-1,%d3
 83:     tst.l LR_HREC_ACTIVE(%a2)
@@ -131,21 +134,18 @@ new = '''_m3_18_dispose_handle:
         clr.l LR_HREC_DATA(%a2)
         clr.l LR_HREC_LOGICAL(%a2)
         clr.l LR_HREC_EXTENT(%a2)
-        clr.l LR_HREC_STATE(%a2)
         bra.s 82b
 84:     adda.l #LR_HANDLE_REC_SIZE,%a2
         dbra %d3,83b
 81:     clr.l LR_HREC_DATA(%a1)
         clr.l LR_HREC_LOGICAL(%a1)
         clr.l LR_HREC_EXTENT(%a1)
-        clr.l LR_HREC_STATE(%a1)
         moveq #MAC_NO_ERR,%d0
         clr.w MAC_MEM_ERR
-12:     suba.l %a0,%a0
-        rte
+24:     rte
 '''
 if old not in src:
-    raise SystemExit("M3.18 generator: DisposeHandle baseline not found")
+    raise SystemExit("M3.18 generator: M3.17 DisposeHandle baseline not found")
 src = src.replace(old, new, 1)
 
 out = root / "build/generated/reset_m3_18.S"
