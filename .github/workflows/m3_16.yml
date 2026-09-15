@@ -1,0 +1,28 @@
+name: M3.16 Ptr tail reclaim
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  qualify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y binutils-m68k-linux-gnu build-essential git python3 autoconf
+      - name: Qualify M3.16 immediate Ptr tail reclamation
+        run: CROSS=m68k-linux-gnu- bash scripts/qualify_m3_16.sh
+      - name: Upload M3.16 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: librerom-m3.16-evidence
+          path: |
+            build/librom-m3.16-macplus.bin
+            build/librom-m3.16-macplus.map
+            build/m3_16-runtime/runtime.txt
+          if-no-files-found: warn
