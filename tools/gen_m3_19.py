@@ -69,7 +69,7 @@ mixed_scan = '''82:     moveq #0,%d7
 86:     adda.l #LR_ALLOC_REC_SIZE,%a2
         dbra %d3,85b
 87:     tst.l %d7
-        bne.s 82b
+        bne.w 82b
 '''
 if handle_scan not in src:
     raise SystemExit("M3.19 generator: Handle predecessor scan baseline not found")
@@ -104,7 +104,7 @@ ptr_end_new = '''74:     adda.l #LR_ALLOC_REC_SIZE,%a2
         clr.l LR_HREC_DATA(%a2)
         clr.l LR_HREC_LOGICAL(%a2)
         clr.l LR_HREC_EXTENT(%a2)
-        bra.s 72b
+        bra.w 72b
 76:     adda.l #LR_HANDLE_REC_SIZE,%a2
         dbra %d3,75b
 71:     moveq #MAC_NO_ERR,%d0
