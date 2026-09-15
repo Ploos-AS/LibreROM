@@ -102,6 +102,15 @@ jobs:
       - name: Qualify M3.15 mixed Ptr Handle compaction
         run: CROSS=m68k-linux-gnu- bash scripts/qualify_m3_15.sh
 
+      - name: Qualify M3.16 Ptr tail reclamation
+        run: CROSS=m68k-linux-gnu- bash scripts/qualify_m3_16.sh
+
+      - name: Qualify M3.17 inactive Ptr tail coalescing
+        run: CROSS=m68k-linux-gnu- bash scripts/qualify_m3_17.sh
+
+      - name: Qualify M3.18 disposed Handle tail reclamation
+        run: CROSS=m68k-linux-gnu- bash scripts/qualify_m3_18.sh
+
       - name: Upload runtime evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -111,108 +120,11 @@ jobs:
             build/librom-m1.bin
             build/librom-m1.map
             build/m1-runtime/runtime.txt
-            build/librom-m2.3-macplus.bin
-            build/librom-m2.3-macplus.map
-            build/m2_3-runtime/runtime.txt
-            build/librom-m2.4-macplus.bin
-            build/librom-m2.4-macplus.map
-            build/m2_4-runtime/runtime.txt
-            build/m2_5-pce/libre-rom-mac-plus.cfg
-            build/m2_5-pce/runtime.txt
-            build/librom-m2.6-macplus.bin
-            build/librom-m2.6-macplus.map
-            build/m2_6-runtime/runtime.txt
-            build/m2_6-pce/libre-rom-mac-plus.cfg
-            build/m2_6-pce/runtime.txt
-            build/librom-m2.7-macplus.bin
-            build/librom-m2.7-macplus.map
-            build/m2_7-runtime/runtime.txt
-            build/m2_7-pce/libre-rom-mac-plus.cfg
-            build/m2_7-pce/runtime.txt
-            build/librom-m2.8-macplus.bin
-            build/librom-m2.8-macplus.map
-            build/m2_8-runtime/runtime.txt
-            build/m2_8-pce/libre-rom-mac-plus.cfg
-            build/m2_8-pce/runtime.txt
-            build/librom-m2.9-macplus.bin
-            build/librom-m2.9-macplus.map
-            build/m2_9-runtime/runtime.txt
-            build/m2_9-pce/libre-rom-mac-plus.cfg
-            build/m2_9-pce/runtime.txt
-            build/librom-m2.10-macplus.bin
-            build/librom-m2.10-macplus.map
-            build/m2_10-pce/libre-rom-iwm-empty.cfg
-            build/m2_10-pce/libre-rom-iwm-media.cfg
-            build/m2_10-pce/empty-runtime.txt
-            build/m2_10-pce/media-runtime.txt
-            build/m2_10-pce/runtime.txt
-            build/m2_10-pce/test-disk.psi
-            build/librom-m2.11-macplus.bin
-            build/librom-m2.11-macplus.map
-            build/m2_11-pce/libre-rom-iwm-read.cfg
-            build/m2_11-pce/runtime-transcript.txt
-            build/m2_11-pce/runtime.txt
-            build/m2_11-pce/test-disk.psi
-            build/librom-m2.12-macplus.bin
-            build/librom-m2.12-macplus.map
-            build/m2_12-pce/libre-rom-sector-loader.cfg
-            build/m2_12-pce/runtime-transcript.txt
-            build/m2_12-pce/runtime.txt
-            build/m2_12-pce/test-disk.psi
-            build/m2_12-pce/sector0.bin
-            build/librom-m2.13-macplus.bin
-            build/librom-m2.13-macplus.map
-            build/m2_13-pce/libre-rom-sector-loader.cfg
-            build/m2_13-pce/runtime-transcript.txt
-            build/m2_13-pce/runtime.txt
-            build/m2_13-pce/test-disk.psi
-            build/m2_13-pce/sector0.bin
-            build/librom-m3.0-macplus.bin
-            build/librom-m3.0-macplus.map
-            build/m3_0-runtime/runtime.txt
-            build/librom-m3.1-macplus.bin
-            build/librom-m3.1-macplus.map
-            build/m3_1-runtime/runtime.txt
-            build/librom-m3.2-macplus.bin
-            build/librom-m3.2-macplus.map
-            build/m3_2-runtime/runtime.txt
-            build/librom-m3.3-macplus.bin
-            build/librom-m3.3-macplus.map
-            build/m3_3-runtime/runtime.txt
-            build/librom-m3.4-macplus.bin
-            build/librom-m3.4-macplus.map
-            build/m3_4-runtime/runtime.txt
-            build/librom-m3.5-macplus.bin
-            build/librom-m3.5-macplus.map
-            build/m3_5-runtime/runtime.txt
-            build/librom-m3.6-macplus.bin
-            build/librom-m3.6-macplus.map
-            build/m3_6-runtime/runtime.txt
-            build/librom-m3.7-macplus.bin
-            build/librom-m3.7-macplus.map
-            build/m3_7-runtime/runtime.txt
-            build/librom-m3.8-macplus.bin
-            build/librom-m3.8-macplus.map
-            build/m3_8-runtime/runtime.txt
-            build/librom-m3.9-macplus.bin
-            build/librom-m3.9-macplus.map
-            build/m3_9-runtime/runtime.txt
-            build/librom-m3.10-macplus.bin
-            build/librom-m3.10-macplus.map
-            build/m3_10-runtime/runtime.txt
-            build/librom-m3.11-macplus.bin
-            build/librom-m3.11-macplus.map
-            build/m3_11-runtime/runtime.txt
-            build/librom-m3.12-macplus.bin
-            build/librom-m3.12-macplus.map
-            build/m3_12-runtime/runtime.txt
-            build/librom-m3.13-macplus.bin
-            build/librom-m3.13-macplus.map
-            build/m3_13-runtime/runtime.txt
-            build/librom-m3.14-macplus.bin
-            build/librom-m3.14-macplus.map
-            build/m3_14-runtime/runtime.txt
-            build/librom-m3.15-macplus.bin
-            build/librom-m3.15-macplus.map
-            build/m3_15-runtime/runtime.txt
+            build/librom-m2.*-macplus.bin
+            build/librom-m2.*-macplus.map
+            build/m2_*-runtime/runtime.txt
+            build/m2_*-pce/**
+            build/librom-m3.*-macplus.bin
+            build/librom-m3.*-macplus.map
+            build/m3_*-runtime/runtime.txt
           if-no-files-found: warn
