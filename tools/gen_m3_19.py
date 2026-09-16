@@ -35,37 +35,37 @@ mixed_scan = '''82:     moveq #0,%d7
         move.l #LR_HANDLE_TABLE,%a2
         moveq #LR_HANDLE_COUNT-1,%d3
 83:     tst.l LR_HREC_ACTIVE(%a2)
-        bne.s 84f
+        bne.w 84f
         move.l LR_HREC_DATA(%a2),%d4
-        beq.s 84f
+        beq.w 84f
         move.l %d4,%d6
         add.l LR_HREC_EXTENT(%a2),%d6
         cmp.l LR_HEAP_NEXT,%d6
-        bne.s 84f
+        bne.w 84f
         move.l %d4,LR_HEAP_NEXT
         clr.l LR_HREC_DATA(%a2)
         clr.l LR_HREC_LOGICAL(%a2)
         clr.l LR_HREC_EXTENT(%a2)
         moveq #1,%d7
-        bra.s 87f
+        bra.w 87f
 84:     adda.l #LR_HANDLE_REC_SIZE,%a2
         dbra %d3,83b
         move.l #LR_ALLOC_TABLE,%a2
         moveq #LR_ALLOC_COUNT-1,%d3
 85:     tst.l LR_REC_ACTIVE(%a2)
-        bne.s 86f
+        bne.w 86f
         move.l LR_REC_PTR(%a2),%d4
-        beq.s 86f
+        beq.w 86f
         move.l %d4,%d6
         add.l LR_REC_EXTENT(%a2),%d6
         cmp.l LR_HEAP_NEXT,%d6
-        bne.s 86f
+        bne.w 86f
         move.l %d4,LR_HEAP_NEXT
         clr.l LR_REC_PTR(%a2)
         clr.l LR_REC_LOGICAL(%a2)
         clr.l LR_REC_EXTENT(%a2)
         moveq #1,%d7
-        bra.s 87f
+        bra.w 87f
 86:     adda.l #LR_ALLOC_REC_SIZE,%a2
         dbra %d3,85b
 87:     tst.l %d7
@@ -76,14 +76,6 @@ if handle_scan not in src:
 src = src.replace(handle_scan, mixed_scan, 1)
 
 # Extend the Ptr disposal coalescer with inactive Handle predecessors too.
-ptr_restart = '''72:     move.l #LR_ALLOC_TABLE,%a2
-        moveq #LR_ALLOC_COUNT-1,%d3
-'''
-ptr_restart_new = '''72:     move.l #LR_ALLOC_TABLE,%a2
-        moveq #LR_ALLOC_COUNT-1,%d3
-'''
-# The existing Ptr loop remains first. Insert a Handle-table pass when it
-# exhausts without finding an inactive Ptr predecessor.
 ptr_end = '''74:     adda.l #LR_ALLOC_REC_SIZE,%a2
         dbra %d3,73b
 71:     moveq #MAC_NO_ERR,%d0
@@ -93,13 +85,13 @@ ptr_end_new = '''74:     adda.l #LR_ALLOC_REC_SIZE,%a2
         move.l #LR_HANDLE_TABLE,%a2
         moveq #LR_HANDLE_COUNT-1,%d3
 75:     tst.l LR_HREC_ACTIVE(%a2)
-        bne.s 76f
+        bne.w 76f
         move.l LR_HREC_DATA(%a2),%d4
-        beq.s 76f
+        beq.w 76f
         move.l %d4,%d6
         add.l LR_HREC_EXTENT(%a2),%d6
         cmp.l LR_HEAP_NEXT,%d6
-        bne.s 76f
+        bne.w 76f
         move.l %d4,LR_HEAP_NEXT
         clr.l LR_HREC_DATA(%a2)
         clr.l LR_HREC_LOGICAL(%a2)
