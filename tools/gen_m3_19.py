@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from pathlib import Path
+import re
 import subprocess
 import sys
 
@@ -9,10 +10,6 @@ src = (root / "build/generated/reset_m3_18.S").read_text(encoding="utf-8")
 src = src.replace("_m3_18", "_m3_19").replace("M3.18", "M3.19")
 src = src.replace("LIBREROM-M3.19-HANDLE-TAIL-RECLAIM", "LIBREROM-M3.19-MIXED-TAIL-COALESCE")
 
-# M3.19 closes the cross-kind gap: after either Ptr or Handle tail rewind,
-# repeatedly absorb inactive predecessor records from BOTH allocation tables.
-# The helper is deliberately conservative: only inactive records ending exactly
-# at LR_HEAP_NEXT are reclaimed; live Ptrs/Handles never move here.
 handle_scan = '''82:     move.l #LR_HANDLE_TABLE,%a2
         moveq #LR_HANDLE_COUNT-1,%d3
 83:     tst.l LR_HREC_ACTIVE(%a2)
@@ -75,7 +72,6 @@ if handle_scan not in src:
     raise SystemExit("M3.19 generator: Handle predecessor scan baseline not found")
 src = src.replace(handle_scan, mixed_scan, 1)
 
-# Extend the Ptr disposal coalescer with inactive Handle predecessors too.
 ptr_end = '''74:     adda.l #LR_ALLOC_REC_SIZE,%a2
         dbra %d3,73b
 71:     moveq #MAC_NO_ERR,%d0
@@ -105,9 +101,6 @@ if ptr_end not in src:
     raise SystemExit("M3.19 generator: Ptr coalescing baseline not found")
 src = src.replace(ptr_end, ptr_end_new, 1)
 
-# Replace the M3.18 fixture with two cross-kind cases. First, dispose an
-# interior Ptr then a tail Handle; second, dispose an interior Handle then a
-# tail Ptr. Both must recover the complete 0x100-byte tail arena.
 start = src.index("        move.l #0x4d333138,0x00000400")
 end_marker = "        move.l #0x4f4b3138,0x00000424      /* OK18 */"
 end = src.index(end_marker, start) + len(end_marker)
@@ -144,7 +137,6 @@ new_test = '''        move.l #0x4d333139,0x00000400      /* M319 */
         bne.w _m3_19_fail
         move.l #0x50483139,0x00000410      /* PH19 */
 
-        /* Refill then free the recovered tail for the inverse case. */
         move.l #0x100,%d0
         .word MAC_TRAP_NEW_HANDLE
         tst.w %d0
@@ -196,6 +188,16 @@ new_test = '''        move.l #0x4d333139,0x00000400      /* M319 */
         bne.w _m3_19_fail
         move.l #0x4f4b3139,0x00000424      /* OK19 */'''
 src = src[:start] + new_test + src[end:]
+
+# M3.19 expands inherited disposal paths enough that previously safe short
+# branches in the M3.18 source can cross the 68000 signed-byte displacement
+# limit. Widen all explicit short Bcc/BRA/BSR forms in this generated variant.
+# This changes encoding size only, not control-flow semantics.
+src = re.sub(
+    r"\b(bra|bsr|bhi|bls|bcc|bcs|bne|beq|bvc|bvs|bpl|bmi|bge|blt|bgt|ble)\.s\b",
+    r"\1.w",
+    src,
+)
 
 out = root / "build/generated/reset_m3_19.S"
 out.parent.mkdir(parents=True, exist_ok=True)
