@@ -8,38 +8,44 @@ subprocess.run([sys.executable, str(root / "tools/gen_m3_20.py")], check=True)
 src = (root / "build/generated/reset_m3_20.S").read_text(encoding="utf-8")
 src = src.replace("_m3_20", "_m3_21").replace("M3.20", "M3.21")
 src = src.replace("LIBREROM-M3.21-INTERIOR-PTR-REUSE", "LIBREROM-M3.21-INTERIOR-HANDLE-REUSE")
-needle = '''_m3_21_new_handle:\n'''
-pos = src.index(needle) + len(needle)
-reuse = '''        /* M3.21: prefer a fitting inactive retained Handle extent. */
-        move.l %d0,%d6
-        lea LR_ALLOC_TABLE,%a1
-        moveq #LR_ALLOC_RECORDS-1,%d5
-_m3_21_handle_reuse_scan:
-        tst.l LR_REC_ACTIVE(%a1)
-        bne.s _m3_21_handle_reuse_next
-        cmpi.l #LR_KIND_HANDLE,LR_REC_KIND(%a1)
-        bne.s _m3_21_handle_reuse_next
-        move.l LR_REC_EXTENT(%a1),%d4
-        cmp.l %d6,%d4
-        blo.s _m3_21_handle_reuse_next
-        move.l LR_REC_HANDLE(%a1),%a0
-        cmpa.l #0,%a0
-        beq.s _m3_21_handle_reuse_next
-        move.l LR_REC_DATA(%a1),%d4
-        beq.s _m3_21_handle_reuse_next
-        move.l %d4,(%a0)
-        move.l %d6,LR_REC_LOGICAL(%a1)
-        move.l #1,LR_REC_ACTIVE(%a1)
-        clr.l LR_REC_STATE(%a1)
-        clr.w LR_MEM_ERR
-        moveq #0,%d0
-        rts
-_m3_21_handle_reuse_next:
-        adda.w #LR_REC_SIZE,%a1
-        dbra %d5,_m3_21_handle_reuse_scan
-        move.l %d6,%d0
+
+# NewHandle already rounds the requested logical size into d1. Before its
+# normal free-record/tail-allocation path, search the real Handle table for an
+# inactive record whose retained interior extent fits. M3.18+ deliberately
+# retains HREC_HANDLE/DATA/LOGICAL/EXTENT for non-tail disposed Handles.
+needle = '''        andi.l #0xfffffffe,%d1
+        move.l #LR_HANDLE_TABLE,%a1
+        move.l #LR_MASTER_BASE,%a2
 '''
-src = src[:pos] + reuse + src[pos:]
+reuse = '''        andi.l #0xfffffffe,%d1
+        move.l #LR_HANDLE_TABLE,%a1
+        moveq #LR_HANDLE_COUNT-1,%d3
+_m3_21_handle_reuse_scan:
+        tst.l LR_HREC_ACTIVE(%a1)
+        bne.w _m3_21_handle_reuse_next
+        move.l LR_HREC_DATA(%a1),%d2
+        beq.w _m3_21_handle_reuse_next
+        cmp.l LR_HREC_EXTENT(%a1),%d1
+        bhi.w _m3_21_handle_reuse_next
+        move.l LR_HREC_HANDLE(%a1),%a2
+        move.l %d2,(%a2)
+        move.l %d4,LR_HREC_LOGICAL(%a1)
+        move.l #1,LR_HREC_ACTIVE(%a1)
+        clr.l LR_HREC_STATE(%a1)
+        move.l %a2,%a0
+        moveq #MAC_NO_ERR,%d0
+        clr.w MAC_MEM_ERR
+        rte
+_m3_21_handle_reuse_next:
+        adda.l #LR_HANDLE_REC_SIZE,%a1
+        dbra %d3,_m3_21_handle_reuse_scan
+        move.l #LR_HANDLE_TABLE,%a1
+        move.l #LR_MASTER_BASE,%a2
+'''
+if needle not in src:
+    raise SystemExit("M3.21 generator: NewHandle baseline not found")
+src = src.replace(needle, reuse, 1)
+
 start = src.index("        move.l #0x4d333230,0x00000400")
 end_marker = "        move.l #0x4f4b3230,0x00000424      /* OK20 */"
 end = src.index(end_marker, start) + len(end_marker)
