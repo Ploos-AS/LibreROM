@@ -32,6 +32,11 @@ handle_scan = '''82:     move.l #LR_HANDLE_TABLE,%a2
 # cross-kind case M3.18 could not see. If none matches, inspect inactive Handle
 # predecessors. Any absorption restarts from Ptrs so an arbitrary alternating
 # Ptr/Handle chain can collapse all the way back to the first live barrier.
+#
+# Keep labels 85/86 unused here: M3.18 already has a forward branch to 85f for
+# the non-tail DisposeHandle path. Reusing 85 inside this injected scan changes
+# that branch target and breaks retained interior-Handle metadata needed by the
+# Handle -> Ptr cross-kind case.
 mixed_scan = '''82:     move.l #LR_ALLOC_TABLE,%a2
         moveq #LR_ALLOC_COUNT-1,%d3
 83:     tst.l LR_REC_ACTIVE(%a2)
@@ -51,21 +56,21 @@ mixed_scan = '''82:     move.l #LR_ALLOC_TABLE,%a2
         dbra %d3,83b
         move.l #LR_HANDLE_TABLE,%a2
         moveq #LR_HANDLE_COUNT-1,%d3
-85:     tst.l LR_HREC_ACTIVE(%a2)
-        bne.w 86f
+87:     tst.l LR_HREC_ACTIVE(%a2)
+        bne.w 88f
         move.l LR_HREC_DATA(%a2),%d4
-        beq.w 86f
+        beq.w 88f
         move.l %d4,%d6
         add.l LR_HREC_EXTENT(%a2),%d6
         cmp.l LR_HEAP_NEXT,%d6
-        bne.w 86f
+        bne.w 88f
         move.l %d4,LR_HEAP_NEXT
         clr.l LR_HREC_DATA(%a2)
         clr.l LR_HREC_LOGICAL(%a2)
         clr.l LR_HREC_EXTENT(%a2)
         bra.w 82b
-86:     adda.l #LR_HANDLE_REC_SIZE,%a2
-        dbra %d3,85b
+88:     adda.l #LR_HANDLE_REC_SIZE,%a2
+        dbra %d3,87b
 '''
 if handle_scan not in src:
     raise SystemExit("M3.19 generator: Handle predecessor scan baseline not found")
