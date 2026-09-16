@@ -28,45 +28,44 @@ handle_scan = '''82:     move.l #LR_HANDLE_TABLE,%a2
 84:     adda.l #LR_HANDLE_REC_SIZE,%a2
         dbra %d3,83b
 '''
-mixed_scan = '''82:     moveq #0,%d7
-        move.l #LR_HANDLE_TABLE,%a2
-        moveq #LR_HANDLE_COUNT-1,%d3
-83:     tst.l LR_HREC_ACTIVE(%a2)
-        bne.w 84f
-        move.l LR_HREC_DATA(%a2),%d4
-        beq.w 84f
-        move.l %d4,%d6
-        add.l LR_HREC_EXTENT(%a2),%d6
-        cmp.l LR_HEAP_NEXT,%d6
-        bne.w 84f
-        move.l %d4,LR_HEAP_NEXT
-        clr.l LR_HREC_DATA(%a2)
-        clr.l LR_HREC_LOGICAL(%a2)
-        clr.l LR_HREC_EXTENT(%a2)
-        moveq #1,%d7
-        bra.w 87f
-84:     adda.l #LR_HANDLE_REC_SIZE,%a2
-        dbra %d3,83b
-        move.l #LR_ALLOC_TABLE,%a2
+# On a Handle-tail rewind, inspect inactive Ptr predecessors first. This is the
+# cross-kind case M3.18 could not see. If none matches, inspect inactive Handle
+# predecessors. Any absorption restarts from Ptrs so an arbitrary alternating
+# Ptr/Handle chain can collapse all the way back to the first live barrier.
+mixed_scan = '''82:     move.l #LR_ALLOC_TABLE,%a2
         moveq #LR_ALLOC_COUNT-1,%d3
-85:     tst.l LR_REC_ACTIVE(%a2)
-        bne.w 86f
+83:     tst.l LR_REC_ACTIVE(%a2)
+        bne.w 84f
         move.l LR_REC_PTR(%a2),%d4
-        beq.w 86f
+        beq.w 84f
         move.l %d4,%d6
         add.l LR_REC_EXTENT(%a2),%d6
         cmp.l LR_HEAP_NEXT,%d6
-        bne.w 86f
+        bne.w 84f
         move.l %d4,LR_HEAP_NEXT
         clr.l LR_REC_PTR(%a2)
         clr.l LR_REC_LOGICAL(%a2)
         clr.l LR_REC_EXTENT(%a2)
-        moveq #1,%d7
-        bra.w 87f
-86:     adda.l #LR_ALLOC_REC_SIZE,%a2
+        bra.w 82b
+84:     adda.l #LR_ALLOC_REC_SIZE,%a2
+        dbra %d3,83b
+        move.l #LR_HANDLE_TABLE,%a2
+        moveq #LR_HANDLE_COUNT-1,%d3
+85:     tst.l LR_HREC_ACTIVE(%a2)
+        bne.w 86f
+        move.l LR_HREC_DATA(%a2),%d4
+        beq.w 86f
+        move.l %d4,%d6
+        add.l LR_HREC_EXTENT(%a2),%d6
+        cmp.l LR_HEAP_NEXT,%d6
+        bne.w 86f
+        move.l %d4,LR_HEAP_NEXT
+        clr.l LR_HREC_DATA(%a2)
+        clr.l LR_HREC_LOGICAL(%a2)
+        clr.l LR_HREC_EXTENT(%a2)
+        bra.w 82b
+86:     adda.l #LR_HANDLE_REC_SIZE,%a2
         dbra %d3,85b
-87:     tst.l %d7
-        bne.w 82b
 '''
 if handle_scan not in src:
     raise SystemExit("M3.19 generator: Handle predecessor scan baseline not found")
@@ -192,7 +191,6 @@ src = src[:start] + new_test + src[end:]
 # M3.19 expands inherited disposal paths enough that previously safe short
 # branches in the M3.18 source can cross the 68000 signed-byte displacement
 # limit. Widen all explicit short Bcc/BRA/BSR forms in this generated variant.
-# This changes encoding size only, not control-flow semantics.
 src = re.sub(
     r"\b(bra|bsr|bhi|bls|bcc|bcs|bne|beq|bvc|bvs|bpl|bmi|bge|blt|bgt|ble)\.s\b",
     r"\1.w",
