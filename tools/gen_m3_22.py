@@ -9,9 +9,6 @@ src = (root / "build/generated/reset_m3_21.S").read_text(encoding="utf-8")
 src = src.replace("_m3_21", "_m3_22").replace("M3.21", "M3.22")
 src = src.replace("LIBREROM-M3.22-INTERIOR-HANDLE-REUSE", "LIBREROM-M3.22-INTERIOR-HOLE-SPLITTING")
 
-# M3.20's Ptr reuse consumes the complete retained extent. M3.22 splits a
-# larger inactive Ptr extent when an unused Ptr-table record exists. If no
-# record is available, retain the qualified whole-extent reuse behavior.
 ptr_needle = '''        cmp.l LR_REC_EXTENT(%a1),%d1
         bhi.s 6f
         move.l %d4,LR_REC_LOGICAL(%a1)
@@ -20,10 +17,8 @@ ptr_needle = '''        cmp.l LR_REC_EXTENT(%a1),%d1
 '''
 ptr_replacement = '''        cmp.l LR_REC_EXTENT(%a1),%d1
         bhi.s 6f
-        /* Exact fit needs no suffix record. */
         cmp.l LR_REC_EXTENT(%a1),%d1
         beq.s _m3_22_ptr_reuse_commit
-        /* Preserve the candidate while looking for a truly unused record. */
         move.l %a1,%a4
         move.l #LR_ALLOC_TABLE,%a2
         moveq #LR_ALLOC_COUNT-1,%d6
@@ -36,7 +31,6 @@ _m3_22_ptr_split_record_scan:
         bra.s _m3_22_ptr_reuse_commit
 _m3_22_ptr_split_record_found:
         move.l %a4,%a1
-        /* a2 becomes an inactive suffix record. */
         move.l LR_REC_PTR(%a1),%d2
         add.l %d1,%d2
         move.l %d2,LR_REC_PTR(%a2)
@@ -55,10 +49,6 @@ if ptr_needle not in src:
     raise SystemExit("M3.22 generator: Ptr reuse baseline not found")
 src = src.replace(ptr_needle, ptr_replacement, 1)
 
-# M3.21 Handle reuse likewise consumed the complete retained data extent.
-# Split a larger extent only when a never-used Handle record is available.
-# The suffix record gets that record's fixed master pointer slot, kept nil
-# while inactive; later NewHandle reuse reconnects it to the suffix data.
 handle_needle = '''        cmp.l LR_HREC_EXTENT(%a1),%d1
         bhi.w _m3_22_handle_reuse_next
         move.l LR_HREC_HANDLE(%a1),%a2
@@ -71,7 +61,6 @@ handle_replacement = '''        cmp.l LR_HREC_EXTENT(%a1),%d1
         bhi.w _m3_22_handle_reuse_next
         cmp.l LR_HREC_EXTENT(%a1),%d1
         beq.s _m3_22_handle_reuse_commit
-        /* Find a never-used Handle record and its corresponding master slot. */
         move.l %a1,%a4
         move.l #LR_HANDLE_TABLE,%a5
         move.l #LR_MASTER_BASE,%a3
@@ -86,7 +75,6 @@ _m3_22_handle_split_record_scan:
         bra.s _m3_22_handle_reuse_commit
 _m3_22_handle_split_record_found:
         move.l %a4,%a1
-        /* a5/a3 describe the inactive suffix Handle record/master slot. */
         move.l %a3,LR_HREC_HANDLE(%a5)
         clr.l (%a3)
         move.l LR_HREC_DATA(%a1),%d2
@@ -110,6 +98,99 @@ _m3_22_handle_reuse_commit:
 if handle_needle not in src:
     raise SystemExit("M3.22 generator: Handle reuse baseline not found")
 src = src.replace(handle_needle, handle_replacement, 1)
+
+# Replace the inherited M3.21 fixture with a deterministic M3.22 split test.
+start = src.index("        move.l #0x4d333231,0x00000400")
+end_marker = "        move.l #0x4f4b3231,0x00000424      /* OK21 */"
+end = src.index(end_marker, start) + len(end_marker)
+fixture = '''        move.l #0x4d333232,0x00000400      /* M322 */
+        /* Ptr: make a 0x40 interior hole with a live barrier above it. */
+        move.l #0x40,%d0
+        .word MAC_TRAP_NEW_PTR
+        tst.w %d0
+        bne.w _m3_22_fail
+        move.l %a0,LR_TEST_PTR
+        move.l #0x50323241,(%a0)
+        move.l #0x40,%d0
+        .word MAC_TRAP_NEW_PTR
+        tst.w %d0
+        bne.w _m3_22_fail
+        move.l %a0,%a5
+        move.l #0x50323242,(%a0)
+        move.l LR_HEAP_NEXT,%d7
+        move.l LR_TEST_PTR,%a0
+        .word MAC_TRAP_DISPOSE_PTR
+        tst.w %d0
+        bne.w _m3_22_fail
+        move.l #0x20,%d0
+        .word MAC_TRAP_NEW_PTR
+        tst.w %d0
+        bne.w _m3_22_fail
+        cmpa.l LR_TEST_PTR,%a0
+        bne.w _m3_22_fail
+        cmp.l LR_HEAP_NEXT,%d7
+        bne.w _m3_22_fail
+        move.l #0x50533232,0x00000404      /* PS22 */
+        move.l #0x20,%d0
+        .word MAC_TRAP_NEW_PTR
+        tst.w %d0
+        bne.w _m3_22_fail
+        move.l LR_TEST_PTR,%a1
+        adda.l #0x20,%a1
+        cmpa.l %a1,%a0
+        bne.w _m3_22_fail
+        cmp.l LR_HEAP_NEXT,%d7
+        bne.w _m3_22_fail
+        cmpi.l #0x50323242,(%a5)
+        bne.w _m3_22_fail
+        move.l #0x50523232,0x00000408      /* PR22 */
+
+        /* Handle: create a larger interior data extent below a Ptr barrier. */
+        move.l #0x40,%d0
+        .word MAC_TRAP_NEW_HANDLE
+        tst.w %d0
+        bne.w _m3_22_fail
+        move.l %a0,LR_TEST_HANDLE
+        move.l (%a0),LR_TEST_OLD_DATA
+        move.l #0x40,%d0
+        .word MAC_TRAP_NEW_PTR
+        tst.w %d0
+        bne.w _m3_22_fail
+        move.l %a0,%a5
+        move.l #0x48323242,(%a0)
+        move.l LR_HEAP_NEXT,%d7
+        move.l LR_TEST_HANDLE,%a0
+        .word MAC_TRAP_DISPOSE_HANDLE
+        tst.w %d0
+        bne.w _m3_22_fail
+        move.l #0x20,%d0
+        .word MAC_TRAP_NEW_HANDLE
+        tst.w %d0
+        bne.w _m3_22_fail
+        move.l (%a0),%a1
+        cmpa.l LR_TEST_OLD_DATA,%a1
+        bne.w _m3_22_fail
+        cmp.l LR_HEAP_NEXT,%d7
+        bne.w _m3_22_fail
+        move.l #0x48533232,0x00000410      /* HS22 */
+        move.l #0x20,%d0
+        .word MAC_TRAP_NEW_HANDLE
+        tst.w %d0
+        bne.w _m3_22_fail
+        move.l (%a0),%a1
+        move.l LR_TEST_OLD_DATA,%a2
+        adda.l #0x20,%a2
+        cmpa.l %a2,%a1
+        bne.w _m3_22_fail
+        cmp.l LR_HEAP_NEXT,%d7
+        bne.w _m3_22_fail
+        cmpi.l #0x48323242,(%a5)
+        bne.w _m3_22_fail
+        move.l #0x48523232,0x00000414      /* HR22 */
+        move.l #0x4f4b3232,0x00000424      /* OK22 */
+_m3_22_done:
+        bra.s _m3_22_done'''
+src = src[:start] + fixture + src[end:]
 
 out = root / "build/generated/reset_m3_22.S"
 out.parent.mkdir(parents=True, exist_ok=True)
