@@ -109,7 +109,9 @@ fixture = '''        move.l #0x4d333231,0x00000400      /* M321 */
         move.l (%a0),%a1
         cmpi.l #0x4b503231,(%a1)
         bne.w _m3_21_fail
-        move.l #0x4f4b3231,0x00000424      /* OK21 */'''
+        move.l #0x4f4b3231,0x00000424      /* OK21 */
+_m3_21_done:
+        bra.s _m3_21_done'''
 src = src[:start] + fixture + src[end:]
 out = root / "build/generated/reset_m3_21.S"
 out.parent.mkdir(parents=True, exist_ok=True)
