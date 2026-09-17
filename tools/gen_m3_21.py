@@ -67,12 +67,13 @@ fixture = '''        move.l #0x4d333231,0x00000400      /* M321 */
         move.l (%a0),LR_TEST_OLD_DATA
         move.l LR_TEST_OLD_DATA,%a1
         move.l #0x41323120,(%a1)           /* A21 */
-        /* Fixed live Ptr barrier above A. */
+        /* Fixed live Ptr barrier above A. Keep its address in LR_TEST_PTR:
+           Handle pressure/compaction is allowed to clobber a5 internally. */
         move.l #0x40,%d0
         .word MAC_TRAP_NEW_PTR
         tst.w %d0
         bne.w _m3_21_fail
-        move.l %a0,%a5
+        move.l %a0,LR_TEST_PTR
         move.l #0x42323120,(%a0)           /* B21 */
         move.l LR_HEAP_NEXT,%d7
         move.l LR_TEST_HANDLE,%a0
@@ -103,7 +104,8 @@ fixture = '''        move.l #0x4d333231,0x00000400      /* M321 */
         cmpa.l LR_TEST_OLD_DATA,%a1
         beq.w _m3_21_fail
         move.l #0x534b3231,0x00000418      /* SK21 */
-        cmpi.l #0x42323120,(%a5)
+        move.l LR_TEST_PTR,%a1
+        cmpi.l #0x42323120,(%a1)
         bne.w _m3_21_fail
         move.l %a4,%a0
         move.l (%a0),%a1
