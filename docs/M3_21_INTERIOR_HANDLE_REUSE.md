@@ -4,7 +4,9 @@ M3.21 extends the retained Macintosh Plus Memory Manager baseline with determini
 
 ## Status
 
-**PLANNED — implementation and qualification pending.**
+**QUALIFIED — retained Macintosh Plus baseline.**
+
+Dedicated GitHub Actions qualification passed in **M3.21 Interior Handle reuse #7** (run `35202083336`) on implementation commit `cb56ad141356b4c07301f870e4a5a3dd3099cdcb`. The same implementation also passed full CI #388, Model variants #176, and the M3.16-M3.20 regression workflows before promotion.
 
 M3.20 qualified reuse of inactive interior Ptr extents. M3.21 applies the corresponding bounded behavior to relocatable Handle storage while preserving Handle master-pointer semantics and all existing Ptr barriers/compaction rules.
 
@@ -12,13 +14,13 @@ M3.20 qualified reuse of inactive interior Ptr extents. M3.21 applies the corres
 
 When `DisposeHandle` releases a Handle whose data extent is not at the heap tail, retain enough allocation metadata for a later `NewHandle` to reuse that inactive extent when it fits, instead of extending `LR_HEAP_NEXT` unnecessarily.
 
-## Required semantics
+## Qualified semantics
 
 - `DisposeHandle` of a non-tail allocation clears the live master pointer and marks the Handle record inactive while retaining its reusable data address and extent.
 - `NewHandle` searches inactive Handle records/extents before extending `LR_HEAP_NEXT`.
 - A fitting inactive extent may be reactivated for a new Handle allocation.
 - The newly allocated Handle receives a valid master pointer and its master pointer references the reused data address.
-- A too-small inactive Handle extent must be skipped.
+- A too-small inactive Handle extent is skipped.
 - Live Ptr addresses never move as a consequence of interior Handle reuse.
 - Live Handle payloads and master pointers not involved in the reuse remain intact.
 - Existing locked-Handle, purge, compaction, tail reclamation and mixed Ptr/Handle coalescing semantics from M3.11-M3.20 remain unchanged.
@@ -26,7 +28,7 @@ When `DisposeHandle` releases a Handle whose data extent is not at the heap tail
 
 ## Qualification fixture
 
-The deterministic Musashi fixture should construct a bounded mixed heap containing:
+The deterministic Musashi fixture constructs a bounded mixed heap containing:
 
 1. a stable lower live Handle;
 2. Handle A with a known data extent and payload;
@@ -37,7 +39,7 @@ The deterministic Musashi fixture should construct a bounded mixed heap containi
 7. an oversized `NewHandle` request proving an undersized inactive extent is not incorrectly reused;
 8. payload/address checks proving the Ptr barrier and unrelated live Handle remain intact.
 
-Qualification must include static source checks, deterministic ROM generation, pinned Musashi runtime evidence and a dedicated GitHub Actions workflow before M3.21 can replace M3.20 as the retained Macintosh Plus baseline.
+Qualification includes static source checks, deterministic ROM generation, pinned Musashi runtime evidence and a dedicated GitHub Actions workflow. M3.21 therefore replaces M3.20 as the retained Macintosh Plus source baseline while M3.20 remains covered by regression qualification.
 
 ## Non-goals
 
