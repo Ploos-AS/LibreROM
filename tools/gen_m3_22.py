@@ -195,7 +195,6 @@ fixture = '''        move.l #0x4d333232,0x00000400      /* M322 */
         bne.w _m3_22_fail
         move.l #0x48523232,0x00000414      /* HR22 */
         move.l #0x4f4b3232,0x00000424      /* OK22 */
-_m3_22_done:
         bra.w _m3_22_done'''
 src = src[:start] + fixture + src[end:]
 
