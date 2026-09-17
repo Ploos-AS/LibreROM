@@ -9,11 +9,10 @@ src = (root / "build/generated/reset_m3_21.S").read_text(encoding="utf-8")
 src = src.replace("_m3_21", "_m3_22").replace("M3.21", "M3.22")
 src = src.replace("LIBREROM-M3.22-INTERIOR-HANDLE-REUSE", "LIBREROM-M3.22-INTERIOR-HOLE-SPLITTING")
 
-# The inherited Ptr reuse path is still the numeric-label implementation from
-# M3.10/M3.20. Include the complete tail of the successful reuse path so the
-# replacement is anchored to the actual generated M3.21 source.
+# M3.19 widens all explicit short branches to word branches, and that widened
+# source is inherited by M3.20/M3.21. Match the actual generated form here.
 ptr_needle = '''        cmp.l LR_REC_EXTENT(%a1),%d1
-        bhi.s 6f
+        bhi.w 6f
         move.l %d4,LR_REC_LOGICAL(%a1)
         move.l #1,LR_REC_ACTIVE(%a1)
         move.l LR_REC_PTR(%a1),%a0
@@ -22,19 +21,19 @@ ptr_needle = '''        cmp.l LR_REC_EXTENT(%a1),%d1
         rte
 '''
 ptr_replacement = '''        cmp.l LR_REC_EXTENT(%a1),%d1
-        bhi.s 6f
+        bhi.w 6f
         cmp.l LR_REC_EXTENT(%a1),%d1
-        beq.s _m3_22_ptr_reuse_commit
+        beq.w _m3_22_ptr_reuse_commit
         move.l %a1,%a4
         move.l #LR_ALLOC_TABLE,%a2
         moveq #LR_ALLOC_COUNT-1,%d6
 _m3_22_ptr_split_record_scan:
         tst.l LR_REC_PTR(%a2)
-        beq.s _m3_22_ptr_split_record_found
+        beq.w _m3_22_ptr_split_record_found
         adda.l #LR_ALLOC_REC_SIZE,%a2
         dbra %d6,_m3_22_ptr_split_record_scan
         move.l %a4,%a1
-        bra.s _m3_22_ptr_reuse_commit
+        bra.w _m3_22_ptr_reuse_commit
 _m3_22_ptr_split_record_found:
         move.l %a4,%a1
         move.l LR_REC_PTR(%a1),%d2
@@ -69,19 +68,19 @@ handle_needle = '''        cmp.l LR_HREC_EXTENT(%a1),%d1
 handle_replacement = '''        cmp.l LR_HREC_EXTENT(%a1),%d1
         bhi.w _m3_22_handle_reuse_next
         cmp.l LR_HREC_EXTENT(%a1),%d1
-        beq.s _m3_22_handle_reuse_commit
+        beq.w _m3_22_handle_reuse_commit
         move.l %a1,%a4
         move.l #LR_HANDLE_TABLE,%a5
         move.l #LR_MASTER_BASE,%a3
         moveq #LR_HANDLE_COUNT-1,%d6
 _m3_22_handle_split_record_scan:
         tst.l LR_HREC_HANDLE(%a5)
-        beq.s _m3_22_handle_split_record_found
+        beq.w _m3_22_handle_split_record_found
         adda.l #LR_HANDLE_REC_SIZE,%a5
         addq.l #4,%a3
         dbra %d6,_m3_22_handle_split_record_scan
         move.l %a4,%a1
-        bra.s _m3_22_handle_reuse_commit
+        bra.w _m3_22_handle_reuse_commit
 _m3_22_handle_split_record_found:
         move.l %a4,%a1
         move.l %a3,LR_HREC_HANDLE(%a5)
@@ -197,7 +196,7 @@ fixture = '''        move.l #0x4d333232,0x00000400      /* M322 */
         move.l #0x48523232,0x00000414      /* HR22 */
         move.l #0x4f4b3232,0x00000424      /* OK22 */
 _m3_22_done:
-        bra.s _m3_22_done'''
+        bra.w _m3_22_done'''
 src = src[:start] + fixture + src[end:]
 
 out = root / "build/generated/reset_m3_22.S"
