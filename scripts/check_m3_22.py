@@ -45,16 +45,37 @@ for token in ["LR_REC_PTR", "LR_REC_LOGICAL", "LR_REC_EXTENT", "LR_REC_ACTIVE", 
 if "LR_HEAP_NEXT" in ptr_split:
     raise SystemExit("M3.22 static qualification FAIL: Ptr interior split modifies heap tail")
 
-handle_start = src.index("_m3_22_handle_split_record_found:")
-handle_end = src.index("_m3_22_handle_reuse_commit:", handle_start)
-handle_split = src[handle_start:handle_end]
+# The Handle split setup maps a never-used Handle record to its corresponding
+# master-pointer slot before the split-record-found label. Validate setup and
+# mutation separately so the checker follows the actual control-flow layout.
+handle_scan_start = src.index("_m3_22_handle_split_record_scan:")
+handle_found = src.index("_m3_22_handle_split_record_found:", handle_scan_start)
+handle_commit = src.index("_m3_22_handle_reuse_commit:", handle_found)
+handle_setup = src[handle_scan_start:handle_found]
+handle_split = src[handle_found:handle_commit]
+
+for token in ["LR_HREC_HANDLE", "LR_HANDLE_REC_SIZE", "addq.l #4,%a3"]:
+    if token not in handle_setup:
+        raise SystemExit("M3.22 static qualification FAIL: incomplete Handle split setup: " + token)
+
+# LR_MASTER_BASE is loaded immediately before entering the scan, so include
+# that prelude in the structural check rather than incorrectly requiring the
+# symbolic constant inside the record-found block itself.
+handle_prelude_start = src.rfind("move.l #LR_HANDLE_TABLE", 0, handle_scan_start)
+if handle_prelude_start < 0:
+    raise SystemExit("M3.22 static qualification FAIL: Handle split prelude missing")
+handle_prelude = src[handle_prelude_start:handle_scan_start]
+for token in ["LR_HANDLE_TABLE", "LR_MASTER_BASE", "LR_HANDLE_COUNT"]:
+    if token not in handle_prelude:
+        raise SystemExit("M3.22 static qualification FAIL: incomplete Handle split prelude: " + token)
+
 for token in [
     "LR_HREC_HANDLE", "LR_HREC_DATA", "LR_HREC_LOGICAL", "LR_HREC_EXTENT",
-    "LR_HREC_ACTIVE", "LR_HREC_STATE", "LR_MASTER_BASE", "add.l %d1", "sub.l %d1",
+    "LR_HREC_ACTIVE", "LR_HREC_STATE", "add.l %d1", "sub.l %d1",
 ]:
     if token not in handle_split:
         raise SystemExit("M3.22 static qualification FAIL: incomplete Handle split path: " + token)
-if "LR_HEAP_NEXT" in handle_split:
+if "LR_HEAP_NEXT" in handle_prelude + handle_setup + handle_split:
     raise SystemExit("M3.22 static qualification FAIL: Handle interior split modifies heap tail")
 
 # The inactive Handle suffix must have a reserved master-pointer slot whose
