@@ -9,11 +9,17 @@ src = (root / "build/generated/reset_m3_21.S").read_text(encoding="utf-8")
 src = src.replace("_m3_21", "_m3_22").replace("M3.21", "M3.22")
 src = src.replace("LIBREROM-M3.22-INTERIOR-HANDLE-REUSE", "LIBREROM-M3.22-INTERIOR-HOLE-SPLITTING")
 
+# The inherited Ptr reuse path is still the numeric-label implementation from
+# M3.10/M3.20. Include the complete tail of the successful reuse path so the
+# replacement is anchored to the actual generated M3.21 source.
 ptr_needle = '''        cmp.l LR_REC_EXTENT(%a1),%d1
         bhi.s 6f
         move.l %d4,LR_REC_LOGICAL(%a1)
         move.l #1,LR_REC_ACTIVE(%a1)
         move.l LR_REC_PTR(%a1),%a0
+        moveq #MAC_NO_ERR,%d0
+        clr.w MAC_MEM_ERR
+        rte
 '''
 ptr_replacement = '''        cmp.l LR_REC_EXTENT(%a1),%d1
         bhi.s 6f
@@ -44,6 +50,9 @@ _m3_22_ptr_reuse_commit:
         move.l %d4,LR_REC_LOGICAL(%a1)
         move.l #1,LR_REC_ACTIVE(%a1)
         move.l LR_REC_PTR(%a1),%a0
+        moveq #MAC_NO_ERR,%d0
+        clr.w MAC_MEM_ERR
+        rte
 '''
 if ptr_needle not in src:
     raise SystemExit("M3.22 generator: Ptr reuse baseline not found")
@@ -99,7 +108,6 @@ if handle_needle not in src:
     raise SystemExit("M3.22 generator: Handle reuse baseline not found")
 src = src.replace(handle_needle, handle_replacement, 1)
 
-# Replace the inherited M3.21 fixture with a deterministic M3.22 split test.
 start = src.index("        move.l #0x4d333231,0x00000400")
 end_marker = "        move.l #0x4f4b3231,0x00000424      /* OK21 */"
 end = src.index(end_marker, start) + len(end_marker)
