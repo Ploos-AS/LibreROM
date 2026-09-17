@@ -9,6 +9,14 @@ src = (root / "build/generated/reset_m3_20.S").read_text(encoding="utf-8")
 src = src.replace("_m3_20", "_m3_21").replace("M3.20", "M3.21")
 src = src.replace("LIBREROM-M3.21-INTERIOR-PTR-REUSE", "LIBREROM-M3.21-INTERIOR-HANDLE-REUSE")
 
+# Keep fixture state in RAM, not in address registers. NewHandle's inherited
+# compaction path is allowed to use/clobber scratch address registers.
+state_needle = "        .equ LR_TEST_OLD_DATA,         0x00000450\n"
+state_repl = state_needle + "        .equ LR_TEST_STABLE_HANDLE,    0x00000454\n"
+if state_needle not in src:
+    raise SystemExit("M3.21 generator: test-state layout not found")
+src = src.replace(state_needle, state_repl, 1)
+
 # NewHandle already rounds the requested logical size into d1. Before its
 # normal free-record/tail-allocation path, search the real Handle table for an
 # inactive record whose retained interior extent fits. M3.18+ deliberately
@@ -50,12 +58,13 @@ start = src.index("        move.l #0x4d333230,0x00000400")
 end_marker = "        move.l #0x4f4b3230,0x00000424      /* OK20 */"
 end = src.index(end_marker, start) + len(end_marker)
 fixture = '''        move.l #0x4d333231,0x00000400      /* M321 */
-        /* Stable lower Handle. */
+        /* Stable lower Handle. Persist its master pointer in RAM because
+           later NewHandle/compaction paths may clobber address registers. */
         move.l #0x0006fe00,%d0
         .word MAC_TRAP_NEW_HANDLE
         tst.w %d0
         bne.w _m3_21_fail
-        move.l %a0,%a4
+        move.l %a0,LR_TEST_STABLE_HANDLE
         move.l (%a0),%a1
         move.l #0x4b503231,(%a1)           /* KP21 */
         /* Handle A becomes an interior hole. */
@@ -68,7 +77,7 @@ fixture = '''        move.l #0x4d333231,0x00000400      /* M321 */
         move.l LR_TEST_OLD_DATA,%a1
         move.l #0x41323120,(%a1)           /* A21 */
         /* Fixed live Ptr barrier above A. Keep its address in LR_TEST_PTR:
-           Handle pressure/compaction is allowed to clobber a5 internally. */
+           Handle pressure/compaction is allowed to clobber scratch registers. */
         move.l #0x40,%d0
         .word MAC_TRAP_NEW_PTR
         tst.w %d0
@@ -107,7 +116,7 @@ fixture = '''        move.l #0x4d333231,0x00000400      /* M321 */
         move.l LR_TEST_PTR,%a1
         cmpi.l #0x42323120,(%a1)
         bne.w _m3_21_fail
-        move.l %a4,%a0
+        move.l LR_TEST_STABLE_HANDLE,%a0
         move.l (%a0),%a1
         cmpi.l #0x4b503231,(%a1)
         bne.w _m3_21_fail
