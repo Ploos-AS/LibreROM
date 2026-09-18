@@ -7,7 +7,7 @@ root = Path(__file__).resolve().parents[1]
 subprocess.run([sys.executable, str(root / "tools/gen_m3_21.py")], check=True)
 src = (root / "build/generated/reset_m3_21.S").read_text(encoding="utf-8")
 src = src.replace("_m3_21", "_m3_22").replace("M3.21", "M3.22")
-src = src.replace("LIBREROM-M3.22-INTERIOR-HANDLE-REUSE", "LIBREROM-M3.22-INTERIOR-HOLE-SPLITTING")
+src = src.replace("LIBREROM-M3.22-INTERIOR-HANDLE-REUSE", "LIBREROM-M3.22-INTERIOR-HOLE-SPLITTING")\nsrc = src.replace(".equ LR_TEST_STABLE_HANDLE,    0x00000454", ".equ LR_TEST_STABLE_HANDLE,    0x00000454\\n        .equ LR_TEST_BARRIER,          0x00000458\\n        .equ LR_TEST_HEAP_SNAPSHOT,    0x0000045c")
 
 # M3.19 widens all explicit short branches to word branches, and that widened
 # source is inherited by M3.20/M3.21. Match the actual generated form here.
@@ -135,7 +135,7 @@ fixture = '''        move.l #0x4d333232,0x00000400      /* M322 */
         bne.w _m3_22_fail
         cmpa.l LR_TEST_PTR,%a0
         bne.w _m3_22_fail
-        cmp.l LR_HEAP_NEXT,%d7
+        move.l LR_TEST_HEAP_SNAPSHOT,%d7\n        cmp.l LR_HEAP_NEXT,%d7
         bne.w _m3_22_fail
         move.l #0x50533232,0x00000404      /* PS22 */
         move.l #0x20,%d0
@@ -146,9 +146,9 @@ fixture = '''        move.l #0x4d333232,0x00000400      /* M322 */
         adda.l #0x20,%a1
         cmpa.l %a1,%a0
         bne.w _m3_22_fail
-        cmp.l LR_HEAP_NEXT,%d7
+        move.l LR_TEST_HEAP_SNAPSHOT,%d7\n        cmp.l LR_HEAP_NEXT,%d7
         bne.w _m3_22_fail
-        cmpi.l #0x50323242,(%a5)
+        move.l LR_TEST_BARRIER,%a5\n        cmpi.l #0x50323242,(%a5)
         bne.w _m3_22_fail
         move.l #0x50523232,0x00000408      /* PR22 */
 
@@ -177,7 +177,7 @@ fixture = '''        move.l #0x4d333232,0x00000400      /* M322 */
         move.l (%a0),%a1
         cmpa.l LR_TEST_OLD_DATA,%a1
         bne.w _m3_22_fail
-        cmp.l LR_HEAP_NEXT,%d7
+        move.l LR_TEST_HEAP_SNAPSHOT,%d7\n        cmp.l LR_HEAP_NEXT,%d7
         bne.w _m3_22_fail
         move.l #0x48533232,0x00000410      /* HS22 */
         move.l #0x20,%d0
@@ -189,9 +189,9 @@ fixture = '''        move.l #0x4d333232,0x00000400      /* M322 */
         adda.l #0x20,%a2
         cmpa.l %a2,%a1
         bne.w _m3_22_fail
-        cmp.l LR_HEAP_NEXT,%d7
+        move.l LR_TEST_HEAP_SNAPSHOT,%d7\n        cmp.l LR_HEAP_NEXT,%d7
         bne.w _m3_22_fail
-        cmpi.l #0x48323242,(%a5)
+        move.l LR_TEST_BARRIER,%a5\n        cmpi.l #0x48323242,(%a5)
         bne.w _m3_22_fail
         move.l #0x48523232,0x00000414      /* HR22 */
         move.l #0x4f4b3232,0x00000424      /* OK22 */
