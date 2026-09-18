@@ -114,6 +114,15 @@ jobs:
       - name: Qualify M3.19 mixed Ptr Handle tail coalescing
         run: CROSS=m68k-linux-gnu- bash scripts/qualify_m3_19.sh
 
+      - name: Qualify M3.20 interior Ptr reuse
+        run: CROSS=m68k-linux-gnu- bash scripts/qualify_m3_20.sh
+
+      - name: Qualify M3.21 interior Handle reuse
+        run: CROSS=m68k-linux-gnu- bash scripts/qualify_m3_21.sh
+
+      - name: Qualify M3.22 interior allocation hole splitting
+        run: CROSS=m68k-linux-gnu- bash scripts/qualify_m3_22.sh
+
       - name: Upload runtime evidence
         if: always()
         uses: actions/upload-artifact@v4
