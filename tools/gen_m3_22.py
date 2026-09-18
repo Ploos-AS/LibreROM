@@ -122,9 +122,9 @@ fixture = '''        move.l #0x4d333232,0x00000400      /* M322 */
         .word MAC_TRAP_NEW_PTR
         tst.w %d0
         bne.w _m3_22_fail
-        move.l %a0,%a5
+        move.l %a0,LR_TEST_BARRIER
         move.l #0x50323242,(%a0)
-        move.l LR_HEAP_NEXT,%d7
+        move.l LR_HEAP_NEXT,LR_TEST_HEAP_SNAPSHOT
         move.l LR_TEST_PTR,%a0
         .word MAC_TRAP_DISPOSE_PTR
         tst.w %d0
@@ -163,9 +163,9 @@ fixture = '''        move.l #0x4d333232,0x00000400      /* M322 */
         .word MAC_TRAP_NEW_PTR
         tst.w %d0
         bne.w _m3_22_fail
-        move.l %a0,%a5
+        move.l %a0,LR_TEST_BARRIER
         move.l #0x48323242,(%a0)
-        move.l LR_HEAP_NEXT,%d7
+        move.l LR_HEAP_NEXT,LR_TEST_HEAP_SNAPSHOT
         move.l LR_TEST_HANDLE,%a0
         .word MAC_TRAP_DISPOSE_HANDLE
         tst.w %d0
