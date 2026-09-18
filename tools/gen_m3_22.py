@@ -205,35 +205,36 @@ fixture = '''        move.l #0x4d333232,0x00000400      /* M322 */
         bne.w _m3_22_fail
         move.l #0x48523232,0x00000414      /* HR22 */
 
-        /* No-free-record fallback: occupy every Ptr record, then make an
-           interior hole. A smaller reuse must safely consume the complete
-           retained extent because no record is available for its suffix. */
-        moveq #4,%d6
-_m3_22_fallback_fill:
+        /* No-free-record fallback: create one interior 0x40 Ptr hole, then
+           mark every otherwise never-used Ptr record as occupied metadata.
+           This deterministically removes suffix-record capacity without
+           consuming heap space or depending on prior fixture allocation count. */
+        move.l #0x40,%d0
+        .word MAC_TRAP_NEW_PTR
+        tst.w %d0
+        bne.w _m3_22_fail
+        move.l %a0,LR_TEST_PTR
         move.l #0x20,%d0
         .word MAC_TRAP_NEW_PTR
         tst.w %d0
         bne.w _m3_22_fail
-        dbra %d6,_m3_22_fallback_fill
-        move.l #LR_ALLOC_TABLE,%a1
-        moveq #LR_ALLOC_COUNT-1,%d6
-_m3_22_fallback_find_interior:
-        tst.l LR_REC_ACTIVE(%a1)
-        beq.w _m3_22_fallback_next
-        move.l LR_REC_EXTENT(%a1),%d2
-        cmpi.l #0x40,%d2
-        bcc.w _m3_22_fallback_found
-_m3_22_fallback_next:
-        adda.l #LR_ALLOC_REC_SIZE,%a1
-        dbra %d6,_m3_22_fallback_find_interior
-        bra.w _m3_22_fail
-_m3_22_fallback_found:
-        move.l LR_REC_PTR(%a1),LR_TEST_PTR
         move.l LR_HEAP_NEXT,LR_TEST_HEAP_SNAPSHOT
         move.l LR_TEST_PTR,%a0
         .word MAC_TRAP_DISPOSE_PTR
         tst.w %d0
         bne.w _m3_22_fail
+        move.l #LR_ALLOC_TABLE,%a1
+        moveq #LR_ALLOC_COUNT-1,%d6
+_m3_22_fallback_occupy_records:
+        tst.l LR_REC_PTR(%a1)
+        bne.w _m3_22_fallback_occupy_next
+        move.l #0x00f00000,LR_REC_PTR(%a1)
+        clr.l LR_REC_LOGICAL(%a1)
+        clr.l LR_REC_EXTENT(%a1)
+        clr.l LR_REC_ACTIVE(%a1)
+_m3_22_fallback_occupy_next:
+        adda.l #LR_ALLOC_REC_SIZE,%a1
+        dbra %d6,_m3_22_fallback_occupy_records
         move.l #0x20,%d0
         .word MAC_TRAP_NEW_PTR
         tst.w %d0
