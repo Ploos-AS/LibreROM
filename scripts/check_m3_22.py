@@ -44,6 +44,12 @@ for token in ["LR_REC_PTR", "LR_REC_LOGICAL", "LR_REC_EXTENT", "LR_REC_ACTIVE", 
         raise SystemExit("M3.22 static qualification FAIL: incomplete Ptr split path: " + token)
 if "LR_HEAP_NEXT" in ptr_split:
     raise SystemExit("M3.22 static qualification FAIL: Ptr interior split modifies heap tail")
+# A split must materialize an inactive suffix at old_address + allocated_extent,
+# with extent old_extent - allocated_extent. If no free record exists, control
+# must fall back to the normal reuse commit without touching suffix metadata.
+for token in ["move.l %d2,LR_REC_PTR(%a2)", "move.l %d2,LR_REC_EXTENT(%a2)", "clr.l LR_REC_ACTIVE(%a2)", "bra.w _m3_22_ptr_reuse_commit"]:
+    if token not in src:
+        raise SystemExit("M3.22 static qualification FAIL: Ptr split/fallback contract: " + token)
 
 # The Handle split setup maps a never-used Handle record to its corresponding
 # master-pointer slot before the split-record-found label. Validate setup and
@@ -82,5 +88,11 @@ if "LR_HEAP_NEXT" in handle_prelude + handle_setup + handle_split:
 # contents remain NULL until a later NewHandle reactivates the suffix record.
 if "clr.l (%a3)" not in handle_split:
     raise SystemExit("M3.22 static qualification FAIL: Handle suffix master pointer is not cleared")
+# Likewise, the Handle suffix must retain its data address/extent in a distinct
+# inactive record, and exhausting record slots must safely consume the complete
+# original extent via the existing reuse commit.
+for token in ["move.l %d2,LR_HREC_DATA(%a5)", "move.l %d2,LR_HREC_EXTENT(%a5)", "clr.l LR_HREC_ACTIVE(%a5)", "bra.w _m3_22_handle_reuse_commit"]:
+    if token not in src:
+        raise SystemExit("M3.22 static qualification FAIL: Handle split/fallback contract: " + token)
 
 print("LibreROM M3.22 interior allocation hole splitting static qualification: PASS")
