@@ -4,7 +4,7 @@ M3.22 extends the qualified M3.21 Macintosh Plus Memory Manager baseline with bo
 
 ## Status
 
-**PLANNED — implementation and qualification pending.**
+**QUALIFIED — dedicated M3.22 qualification passed in GitHub Actions run #14. Promoted as the retained Macintosh Plus baseline; full-CI and model-variant promotion verification follows the promotion commits.**
 
 M3.20 introduced deterministic interior Ptr-hole reuse and M3.21 introduced corresponding Handle-hole reuse. Both deliberately reuse an entire retained extent even when the new allocation is smaller. M3.22 begins reducing that internal fragmentation by retaining the unused remainder as a reusable interior extent.
 
