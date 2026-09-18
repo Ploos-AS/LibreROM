@@ -204,6 +204,46 @@ fixture = '''        move.l #0x4d333232,0x00000400      /* M322 */
         move.l LR_TEST_BARRIER,%a5\n        cmpi.l #0x48323242,(%a5)
         bne.w _m3_22_fail
         move.l #0x48523232,0x00000414      /* HR22 */
+
+        /* No-free-record fallback: occupy every Ptr record, then make an
+           interior hole. A smaller reuse must safely consume the complete
+           retained extent because no record is available for its suffix. */
+        moveq #4,%d6
+_m3_22_fallback_fill:
+        move.l #0x20,%d0
+        .word MAC_TRAP_NEW_PTR
+        tst.w %d0
+        bne.w _m3_22_fail
+        dbra %d6,_m3_22_fallback_fill
+        move.l #LR_ALLOC_TABLE,%a1
+        moveq #LR_ALLOC_COUNT-1,%d6
+_m3_22_fallback_find_interior:
+        tst.l LR_REC_ACTIVE(%a1)
+        beq.w _m3_22_fallback_next
+        move.l LR_REC_EXTENT(%a1),%d2
+        cmpi.l #0x40,%d2
+        bcc.w _m3_22_fallback_found
+_m3_22_fallback_next:
+        adda.l #LR_ALLOC_REC_SIZE,%a1
+        dbra %d6,_m3_22_fallback_find_interior
+        bra.w _m3_22_fail
+_m3_22_fallback_found:
+        move.l LR_REC_PTR(%a1),LR_TEST_PTR
+        move.l LR_HEAP_NEXT,LR_TEST_HEAP_SNAPSHOT
+        move.l LR_TEST_PTR,%a0
+        .word MAC_TRAP_DISPOSE_PTR
+        tst.w %d0
+        bne.w _m3_22_fail
+        move.l #0x20,%d0
+        .word MAC_TRAP_NEW_PTR
+        tst.w %d0
+        bne.w _m3_22_fail
+        cmpa.l LR_TEST_PTR,%a0
+        bne.w _m3_22_fail
+        move.l LR_TEST_HEAP_SNAPSHOT,%d7
+        cmp.l LR_HEAP_NEXT,%d7
+        bne.w _m3_22_fail
+        move.l #0x46423232,0x00000418      /* FB22 */
         move.l #0x4f4b3232,0x00000424      /* OK22 */
         bra.w _m3_22_done'''
 src = src[:start] + fixture + src[end:]
