@@ -7,7 +7,17 @@ root = Path(__file__).resolve().parents[1]
 subprocess.run([sys.executable, str(root / "tools/gen_m3_21.py")], check=True)
 src = (root / "build/generated/reset_m3_21.S").read_text(encoding="utf-8")
 src = src.replace("_m3_21", "_m3_22").replace("M3.21", "M3.22")
-src = src.replace("LIBREROM-M3.22-INTERIOR-HANDLE-REUSE", "LIBREROM-M3.22-INTERIOR-HOLE-SPLITTING")\nsrc = src.replace(".equ LR_TEST_STABLE_HANDLE,    0x00000454", ".equ LR_TEST_STABLE_HANDLE,    0x00000454\\n        .equ LR_TEST_BARRIER,          0x00000458\\n        .equ LR_TEST_HEAP_SNAPSHOT,    0x0000045c")
+src = src.replace(
+    "LIBREROM-M3.22-INTERIOR-HANDLE-REUSE",
+    "LIBREROM-M3.22-INTERIOR-HOLE-SPLITTING",
+)
+state_symbols = (
+    ".equ LR_TEST_STABLE_HANDLE,    0x00000454",
+    ".equ LR_TEST_STABLE_HANDLE,    0x00000454"
+    + chr(10) + "        .equ LR_TEST_BARRIER,          0x00000458"
+    + chr(10) + "        .equ LR_TEST_HEAP_SNAPSHOT,    0x0000045c",
+)
+src = src.replace(*state_symbols)
 
 # M3.19 widens all explicit short branches to word branches, and that widened
 # source is inherited by M3.20/M3.21. Match the actual generated form here.
