@@ -38,6 +38,88 @@ if handle_anchor not in src:
     raise SystemExit("M3.23 generator: DisposeHandle inactive transition not found")
 src = src.replace(handle_anchor, handle_anchor + "        bsr.w _m3_23_coalesce_handle_hole" + chr(10) + "        bsr.w _m3_23_coalesce_mixed_from_handle" + chr(10), 1)
 
+# Replace the inherited M3.22 fixture with a focused M3.23 runtime proof.
+# The fixture uses explicit inactive metadata so the coalescers themselves are
+# exercised deterministically without depending on allocation-table pressure.
+fixture_start = src.index("        move.l #0x4d333232,0x00000400")
+fixture_end_marker = "        move.l #0x4f4b3232,0x00000424      /* OK22 */"
+fixture_end = src.index(fixture_end_marker, fixture_start) + len(fixture_end_marker)
+fixture = """        move.l #0x4d333233,0x00000400      /* M323 */
+        /* Ptr+Ptr: two adjacent 0x20 holes -> one 0x40 hole. */
+        move.l #LR_ALLOC_TABLE,%a1
+        move.l #0x00012000,LR_REC_PTR(%a1)
+        move.l #0x20,LR_REC_EXTENT(%a1)
+        clr.l LR_REC_ACTIVE(%a1)
+        lea LR_ALLOC_REC_SIZE(%a1),%a2
+        move.l #0x00012020,LR_REC_PTR(%a2)
+        move.l #0x20,LR_REC_EXTENT(%a2)
+        clr.l LR_REC_ACTIVE(%a2)
+        bsr.w _m3_23_coalesce_ptr_hole
+        cmpi.l #0x40,LR_REC_EXTENT(%a1)
+        bne.w _m3_23_fail
+        tst.l LR_REC_PTR(%a2)
+        bne.w _m3_23_fail
+        move.l #0x50503233,0x00000404      /* PP23 */
+
+        /* Handle+Handle: adjacent inactive data extents coalesce. */
+        move.l #LR_HANDLE_TABLE,%a1
+        move.l #LR_MASTER_BASE,LR_HREC_HANDLE(%a1)
+        move.l #0x00013000,LR_HREC_DATA(%a1)
+        move.l #0x20,LR_HREC_EXTENT(%a1)
+        clr.l LR_HREC_ACTIVE(%a1)
+        lea LR_HANDLE_REC_SIZE(%a1),%a2
+        move.l #LR_MASTER_BASE+4,LR_HREC_HANDLE(%a2)
+        move.l #0x00013020,LR_HREC_DATA(%a2)
+        move.l #0x20,LR_HREC_EXTENT(%a2)
+        clr.l LR_HREC_ACTIVE(%a2)
+        bsr.w _m3_23_coalesce_handle_hole
+        cmpi.l #0x40,LR_HREC_EXTENT(%a1)
+        bne.w _m3_23_fail
+        tst.l LR_HREC_DATA(%a2)
+        bne.w _m3_23_fail
+        move.l #0x48483233,0x00000408      /* HH23 */
+
+        /* Mixed Ptr+Handle adjacency: Ptr metadata survives. */
+        move.l #LR_ALLOC_TABLE+32,%a1
+        move.l #0x00014000,LR_REC_PTR(%a1)
+        move.l #0x20,LR_REC_EXTENT(%a1)
+        clr.l LR_REC_ACTIVE(%a1)
+        move.l #LR_HANDLE_TABLE+48,%a2
+        move.l #LR_MASTER_BASE+8,LR_HREC_HANDLE(%a2)
+        move.l #0x00014020,LR_HREC_DATA(%a2)
+        move.l #0x20,LR_HREC_EXTENT(%a2)
+        clr.l LR_HREC_ACTIVE(%a2)
+        bsr.w _m3_23_coalesce_mixed_from_ptr
+        cmpi.l #0x40,LR_REC_EXTENT(%a1)
+        bne.w _m3_23_fail
+        tst.l LR_HREC_DATA(%a2)
+        bne.w _m3_23_fail
+        move.l #0x50483233,0x0000040c      /* PH23 */
+
+        /* A live Ptr between free extents is a hard barrier. */
+        move.l #LR_ALLOC_TABLE+48,%a1
+        move.l #0x00015000,LR_REC_PTR(%a1)
+        move.l #0x20,LR_REC_EXTENT(%a1)
+        clr.l LR_REC_ACTIVE(%a1)
+        move.l #LR_ALLOC_TABLE+64,%a2
+        move.l #0x00015020,LR_REC_PTR(%a2)
+        move.l #0x20,LR_REC_EXTENT(%a2)
+        move.l #1,LR_REC_ACTIVE(%a2)
+        move.l #LR_ALLOC_TABLE+80,%a3
+        move.l #0x00015040,LR_REC_PTR(%a3)
+        move.l #0x20,LR_REC_EXTENT(%a3)
+        clr.l LR_REC_ACTIVE(%a3)
+        bsr.w _m3_23_coalesce_ptr_hole
+        cmpi.l #0x20,LR_REC_EXTENT(%a1)
+        bne.w _m3_23_fail
+        cmpi.l #0x20,LR_REC_EXTENT(%a3)
+        bne.w _m3_23_fail
+        move.l #0x42413233,0x00000410      /* BA23 */
+
+        move.l #0x4f4b3233,0x00000424      /* OK23 */
+"""
+src = src[:fixture_start] + fixture + src[fixture_end:]
+
 insert_at = src.index("_m3_23_done:")
 helper = """_m3_23_coalesce_ptr_hole:
         /* a1 = newly inactive Ptr record. Merge adjacent inactive Ptr
