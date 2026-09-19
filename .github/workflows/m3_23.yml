@@ -13,7 +13,7 @@ jobs:
       - name: Install build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y binutils-m68k-linux-gnu python3
+          sudo apt-get install -y binutils-m68k-linux-gnu build-essential git python3 autoconf
       - name: Build and statically qualify initial M3.23
         run: CROSS=m68k-linux-gnu- bash scripts/qualify_m3_23.sh
       - name: Upload M3.23 build evidence
@@ -24,4 +24,5 @@ jobs:
           path: |
             build/librom-m3.23-macplus.bin
             build/librom-m3.23-macplus.map
+            build/m3_23-runtime/runtime.txt
           if-no-files-found: warn
