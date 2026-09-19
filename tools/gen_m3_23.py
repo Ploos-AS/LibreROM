@@ -15,17 +15,19 @@ src = src.replace(
 # M3.23 starts by adding a bounded coalescing primitive for inactive Ptr
 # extents. It is deliberately invoked after DisposePtr's existing tail
 # reclamation path has decided that the disposed extent remains interior.
+# Hook the coalescer immediately after DisposePtr marks its matched record
+# inactive. Match the stable instruction pair rather than later tail-reclaim
+# details, which evolved across M3.16-M3.22.
 needle = """        clr.l LR_REC_ACTIVE(%a1)
-        move.l LR_REC_PTR(%a1),%d2
-        add.l LR_REC_EXTENT(%a1),%d2
 """
 replacement = """        clr.l LR_REC_ACTIVE(%a1)
         bsr.w _m3_23_coalesce_ptr_hole
-        move.l LR_REC_PTR(%a1),%d2
-        add.l LR_REC_EXTENT(%a1),%d2
 """
-if needle not in src:
+matches = src.count(needle)
+if matches < 1:
     raise SystemExit("M3.23 generator: DisposePtr inactive transition not found")
+# The first occurrence belongs to DisposePtr in the inherited service code;
+# later occurrences are split-suffix/fallback metadata initialization.
 src = src.replace(needle, replacement, 1)
 
 insert_at = src.index("_m3_23_done:")
