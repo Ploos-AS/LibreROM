@@ -19,6 +19,10 @@ required = [
     "_m3_23_coalesce_handle_hole",
     "_m3_23_coalesce_handle_restart",
     "_m3_23_coalesce_handle_check_below",
+    "_m3_23_coalesce_mixed_from_ptr",
+    "_m3_23_coalesce_mixed_from_handle",
+    "_m3_23_mixed_ptr_absorb_handle",
+    "_m3_23_mixed_handle_absorb",
     "LIBREROM-M3.23-INTERIOR-FREE-COALESCING",
 ]
 missing = [x for x in required if x not in src]
@@ -77,4 +81,18 @@ for token in [
 if "LR_HEAP_NEXT" in hbody:
     raise SystemExit("M3.23 static qualification FAIL: Handle interior coalescer modifies heap tail")
 
-print("LibreROM M3.23 Ptr/Handle interior coalescing static qualification: PASS")
+mstart = src.index("_m3_23_coalesce_mixed_from_ptr:")
+mend = src.index("_m3_23_coalesce_handle_hole:", mstart)
+mbody = src[mstart:mend]
+for token in [
+    "LR_ALLOC_TABLE", "LR_HANDLE_TABLE",
+    "tst.l LR_REC_ACTIVE(%a2)", "tst.l LR_HREC_ACTIVE(%a2)",
+    "LR_REC_EXTENT", "LR_HREC_EXTENT",
+    "clr.l (%a3)", "clr.l LR_HREC_STATE",
+]:
+    if token not in mbody:
+        raise SystemExit("M3.23 static qualification FAIL: mixed coalescing contract: " + token)
+if "LR_HEAP_NEXT" in mbody:
+    raise SystemExit("M3.23 static qualification FAIL: mixed interior coalescer modifies heap tail")
+
+print("LibreROM M3.23 Ptr/Handle/mixed interior coalescing static qualification: PASS")
