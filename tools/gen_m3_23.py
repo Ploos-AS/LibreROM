@@ -30,6 +30,14 @@ if matches < 1:
 # later occurrences are split-suffix/fallback metadata initialization.
 src = src.replace(needle, replacement, 1)
 
+# DisposeHandle retains metadata for interior holes. Hook a bounded Handle
+# coalescer after the first inherited active-state clear in DisposeHandle.
+handle_anchor = """        clr.l LR_HREC_ACTIVE(%a1)
+"""
+if handle_anchor not in src:
+    raise SystemExit("M3.23 generator: DisposeHandle inactive transition not found")
+src = src.replace(handle_anchor, handle_anchor + "        bsr.w _m3_23_coalesce_handle_hole" + chr(10), 1)
+
 insert_at = src.index("_m3_23_done:")
 helper = """_m3_23_coalesce_ptr_hole:
         /* a1 = newly inactive Ptr record. Merge adjacent inactive Ptr
@@ -83,7 +91,63 @@ _m3_23_coalesce_ptr_next:
         rts
 
 """
-src = src[:insert_at] + helper + src[insert_at:]
+handle_helper = """_m3_23_coalesce_handle_hole:
+        /* a1 = newly inactive Handle record. Coalesce adjacent inactive
+           Handle data extents; the lower-address record survives. */
+        movem.l %d0-%d3/%a0-%a3,-(%sp)
+_m3_23_coalesce_handle_restart:
+        move.l #LR_HANDLE_TABLE,%a2
+        moveq #LR_HANDLE_COUNT-1,%d3
+_m3_23_coalesce_handle_scan:
+        cmpa.l %a1,%a2
+        beq.w _m3_23_coalesce_handle_next
+        tst.l LR_HREC_HANDLE(%a2)
+        beq.w _m3_23_coalesce_handle_next
+        tst.l LR_HREC_ACTIVE(%a2)
+        bne.w _m3_23_coalesce_handle_next
+        move.l LR_HREC_DATA(%a2),%d2
+        beq.w _m3_23_coalesce_handle_next
+
+        move.l LR_HREC_DATA(%a1),%d0
+        add.l LR_HREC_EXTENT(%a1),%d0
+        cmp.l LR_HREC_DATA(%a2),%d0
+        bne.w _m3_23_coalesce_handle_check_below
+        move.l LR_HREC_EXTENT(%a2),%d1
+        add.l %d1,LR_HREC_EXTENT(%a1)
+        move.l LR_HREC_HANDLE(%a2),%a3
+        clr.l (%a3)
+        clr.l LR_HREC_DATA(%a2)
+        clr.l LR_HREC_LOGICAL(%a2)
+        clr.l LR_HREC_EXTENT(%a2)
+        clr.l LR_HREC_ACTIVE(%a2)
+        clr.l LR_HREC_STATE(%a2)
+        bra.w _m3_23_coalesce_handle_restart
+
+_m3_23_coalesce_handle_check_below:
+        move.l LR_HREC_DATA(%a2),%d0
+        add.l LR_HREC_EXTENT(%a2),%d0
+        cmp.l LR_HREC_DATA(%a1),%d0
+        bne.w _m3_23_coalesce_handle_next
+        move.l LR_HREC_EXTENT(%a1),%d1
+        add.l %d1,LR_HREC_EXTENT(%a2)
+        move.l LR_HREC_HANDLE(%a1),%a3
+        clr.l (%a3)
+        clr.l LR_HREC_DATA(%a1)
+        clr.l LR_HREC_LOGICAL(%a1)
+        clr.l LR_HREC_EXTENT(%a1)
+        clr.l LR_HREC_ACTIVE(%a1)
+        clr.l LR_HREC_STATE(%a1)
+        move.l %a2,%a1
+        bra.w _m3_23_coalesce_handle_restart
+
+_m3_23_coalesce_handle_next:
+        adda.l #LR_HANDLE_REC_SIZE,%a2
+        dbra %d3,_m3_23_coalesce_handle_scan
+        movem.l (%sp)+,%d0-%d3/%a0-%a3
+        rts
+
+"""
+src = src[:insert_at] + helper + handle_helper + src[insert_at:]
 
 out = root / "build/generated/reset_m3_23.S"
 out.parent.mkdir(parents=True, exist_ok=True)
