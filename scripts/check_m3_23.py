@@ -82,7 +82,7 @@ if "LR_HEAP_NEXT" in hbody:
     raise SystemExit("M3.23 static qualification FAIL: Handle interior coalescer modifies heap tail")
 
 mstart = src.index("_m3_23_coalesce_mixed_from_ptr:")
-mend = src.index("_m3_23_coalesce_handle_hole:", mstart)
+mend = src.index("_m3_23_done:", mstart)
 mbody = src[mstart:mend]
 for token in [
     "LR_ALLOC_TABLE", "LR_HANDLE_TABLE",
