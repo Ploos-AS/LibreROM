@@ -36,7 +36,7 @@ handle_anchor = """        clr.l LR_HREC_ACTIVE(%a1)
 """
 if handle_anchor not in src:
     raise SystemExit("M3.23 generator: DisposeHandle inactive transition not found")
-src = src.replace(handle_anchor, handle_anchor + "        bsr.w _m3_23_coalesce_handle_hole" + chr(10), 1)
+src = src.replace(handle_anchor, handle_anchor + "        bsr.w _m3_23_coalesce_handle_hole" + chr(10) + "        bsr.w _m3_23_coalesce_mixed_from_handle" + chr(10), 1)
 
 insert_at = src.index("_m3_23_done:")
 helper = """_m3_23_coalesce_ptr_hole:
@@ -87,6 +87,85 @@ _m3_23_coalesce_ptr_check_below:
 _m3_23_coalesce_ptr_next:
         adda.l #LR_ALLOC_REC_SIZE,%a2
         dbra %d3,_m3_23_coalesce_ptr_scan
+        movem.l (%sp)+,%d0-%d3/%a0-%a3
+        rts
+
+"""
+mixed_helper = """_m3_23_coalesce_mixed_from_ptr:
+        /* a1 = inactive Ptr record. Merge one adjacent inactive Handle extent
+           into the Ptr record, retire the Handle data extent, then return. */
+        movem.l %d0-%d3/%a0-%a3,-(%sp)
+        move.l #LR_HANDLE_TABLE,%a2
+        moveq #LR_HANDLE_COUNT-1,%d3
+_m3_23_mixed_ptr_scan:
+        tst.l LR_HREC_HANDLE(%a2)
+        beq.w _m3_23_mixed_ptr_next
+        tst.l LR_HREC_ACTIVE(%a2)
+        bne.w _m3_23_mixed_ptr_next
+        move.l LR_HREC_DATA(%a2),%d2
+        beq.w _m3_23_mixed_ptr_next
+        move.l LR_REC_PTR(%a1),%d0
+        add.l LR_REC_EXTENT(%a1),%d0
+        cmp.l LR_HREC_DATA(%a2),%d0
+        beq.w _m3_23_mixed_ptr_absorb_handle
+        move.l LR_HREC_DATA(%a2),%d0
+        add.l LR_HREC_EXTENT(%a2),%d0
+        cmp.l LR_REC_PTR(%a1),%d0
+        bne.w _m3_23_mixed_ptr_next
+        move.l LR_HREC_DATA(%a2),LR_REC_PTR(%a1)
+_m3_23_mixed_ptr_absorb_handle:
+        move.l LR_HREC_EXTENT(%a2),%d1
+        add.l %d1,LR_REC_EXTENT(%a1)
+        move.l LR_HREC_HANDLE(%a2),%a3
+        clr.l (%a3)
+        clr.l LR_HREC_DATA(%a2)
+        clr.l LR_HREC_LOGICAL(%a2)
+        clr.l LR_HREC_EXTENT(%a2)
+        clr.l LR_HREC_ACTIVE(%a2)
+        clr.l LR_HREC_STATE(%a2)
+        bra.w _m3_23_mixed_ptr_done
+_m3_23_mixed_ptr_next:
+        adda.l #LR_HANDLE_REC_SIZE,%a2
+        dbra %d3,_m3_23_mixed_ptr_scan
+_m3_23_mixed_ptr_done:
+        movem.l (%sp)+,%d0-%d3/%a0-%a3
+        rts
+
+_m3_23_coalesce_mixed_from_handle:
+        /* a1 = inactive Handle record. Prefer the Ptr record as survivor so
+           mixed free space remains directly reusable by NewPtr. */
+        movem.l %d0-%d3/%a0-%a3,-(%sp)
+        move.l #LR_ALLOC_TABLE,%a2
+        moveq #LR_ALLOC_COUNT-1,%d3
+_m3_23_mixed_handle_scan:
+        tst.l LR_REC_PTR(%a2)
+        beq.w _m3_23_mixed_handle_next
+        tst.l LR_REC_ACTIVE(%a2)
+        bne.w _m3_23_mixed_handle_next
+        move.l LR_REC_PTR(%a2),%d0
+        add.l LR_REC_EXTENT(%a2),%d0
+        cmp.l LR_HREC_DATA(%a1),%d0
+        beq.w _m3_23_mixed_handle_absorb
+        move.l LR_HREC_DATA(%a1),%d0
+        add.l LR_HREC_EXTENT(%a1),%d0
+        cmp.l LR_REC_PTR(%a2),%d0
+        bne.w _m3_23_mixed_handle_next
+        move.l LR_HREC_DATA(%a1),LR_REC_PTR(%a2)
+_m3_23_mixed_handle_absorb:
+        move.l LR_HREC_EXTENT(%a1),%d1
+        add.l %d1,LR_REC_EXTENT(%a2)
+        move.l LR_HREC_HANDLE(%a1),%a3
+        clr.l (%a3)
+        clr.l LR_HREC_DATA(%a1)
+        clr.l LR_HREC_LOGICAL(%a1)
+        clr.l LR_HREC_EXTENT(%a1)
+        clr.l LR_HREC_ACTIVE(%a1)
+        clr.l LR_HREC_STATE(%a1)
+        bra.w _m3_23_mixed_handle_done
+_m3_23_mixed_handle_next:
+        adda.l #LR_ALLOC_REC_SIZE,%a2
+        dbra %d3,_m3_23_mixed_handle_scan
+_m3_23_mixed_handle_done:
         movem.l (%sp)+,%d0-%d3/%a0-%a3
         rts
 
@@ -147,7 +226,7 @@ _m3_23_coalesce_handle_next:
         rts
 
 """
-src = src[:insert_at] + helper + handle_helper + src[insert_at:]
+src = src[:insert_at] + helper + handle_helper + mixed_helper + src[insert_at:]
 
 out = root / "build/generated/reset_m3_23.S"
 out.parent.mkdir(parents=True, exist_ok=True)
